@@ -36,6 +36,12 @@ function doPost(e) {
   return json(confirmar(datos));
 }
 
+// Para un disparador cada 5 minutos: evita que la primera visita del día
+// pague el arranque en frío del proyecto.
+function calentar() {
+  ubicar('AAAAAA');
+}
+
 function lookup(codigo) {
   const ctx = ubicar(codigo);
   if (ctx.error) return { ok: false, error: ctx.error, falta: ctx.falta };

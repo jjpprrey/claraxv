@@ -907,7 +907,12 @@ const CONFIG = {
   async function validarCodigo(code) {
     gateMensaje("");
     gateEsperando(true);
+    // La primera visita puede pagar el arranque en frío del script.
+    const paciencia = setTimeout(() => {
+      if (gateNota) gateNota.textContent = "Está tardando un poco más de lo normal. Ya casi…";
+    }, 6000);
     const res = await pedirAlScript({ action: "lookup", code: code });
+    clearTimeout(paciencia);
     if (res && res.ok) { abrir(res); return; }
     gateEsperando(false);
     gateMensaje(mensajeDeError(res));
