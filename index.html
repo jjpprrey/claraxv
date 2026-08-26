@@ -25,6 +25,8 @@
 
   /* Estados :hover / :focus (portados de style-hover / style-focus del prototipo) */
   .btn-wine:hover { background:#92304C; transform:translateY(-2px); box-shadow:0 26px 46px -20px rgba(176,58,91,.78); color:#fff; }
+  .btn-linea { background:transparent; color:#B03A5B; }
+  .btn-linea:hover { background:#B03A5B; color:#fff; transform:translateY(-2px); }
   .opt:hover { border-color:rgba(176,58,91,.8); background:#fff; }
   .btn-copy:hover { background:#fff; color:#B03A5B; border-color:#fff; }
   .btn-mp:hover { background:transparent; color:#fff; }
@@ -124,7 +126,24 @@
       </div>
     </div>
 
-    <a href="#rsvp" class="btn-wine" style="margin-top:clamp(2px,1dvh,10px); display:inline-flex; align-items:center; justify-content:center; gap:.6rem; white-space:nowrap; padding:16px 38px; border:1px solid #B03A5B; background:#B03A5B; color:#fff; font-family:'Jost',sans-serif; font-weight:600; font-size:15px; letter-spacing:.04em; text-transform:uppercase; text-decoration:none; box-shadow:0 18px 34px -18px rgba(176,58,91,.7); transition:transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s, background .35s">Confirmar asistencia</a>
+    <div data-cta style="margin-top:clamp(2px,1dvh,10px); display:flex; flex-direction:column; align-items:center; gap:clamp(6px,1.1dvh,12px)">
+
+      <a data-cta-nuevo href="#confirmacion" class="btn-wine" style="display:inline-flex; align-items:center; justify-content:center; gap:.6rem; white-space:nowrap; padding:16px 38px; border:1px solid #B03A5B; background:#B03A5B; color:#fff; font-family:'Jost',sans-serif; font-weight:600; font-size:15px; letter-spacing:.04em; text-transform:uppercase; text-decoration:none; box-shadow:0 18px 34px -18px rgba(176,58,91,.7); transition:transform .35s cubic-bezier(.16,1,.3,1), box-shadow .35s, background .35s">Confirmar asistencia</a>
+
+      <p data-cta-titulo hidden style="margin:0 0 clamp(6px,1.4dvh,16px); font-family:'Bodoni Moda',serif; font-weight:500; font-style:italic; font-size:clamp(19px,2.7dvh,25px); line-height:1.15; color:#141014; text-align:center"></p>
+
+      <div data-cta-acciones hidden style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px">
+        <button type="button" data-cta-form class="btn-wine" style="display:inline-flex; align-items:center; justify-content:center; padding:13px 24px; border:1px solid #B03A5B; background:#B03A5B; color:#fff; font-family:'Jost',sans-serif; font-weight:600; font-size:13px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; box-shadow:0 14px 28px -16px rgba(60,24,40,.7); transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, background .3s">Modificar asistencia</button>
+        <button type="button" data-cta-cancelar class="btn-linea" style="display:inline-flex; align-items:center; justify-content:center; padding:13px 24px; border:1px solid #B03A5B; font-family:'Jost',sans-serif; font-weight:600; font-size:13px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:background .3s, color .3s">Cancelar asistencia</button>
+      </div>
+
+      <div data-cta-seguro hidden style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px">
+        <button type="button" data-cta-si class="btn-wine" style="display:inline-flex; align-items:center; justify-content:center; padding:13px 24px; border:1px solid #B03A5B; background:#B03A5B; color:#fff; font-family:'Jost',sans-serif; font-weight:600; font-size:13px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; box-shadow:0 14px 28px -16px rgba(60,24,40,.7); transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, background .3s">Sí, cancelar</button>
+        <button type="button" data-cta-no class="btn-linea" style="display:inline-flex; align-items:center; justify-content:center; padding:13px 24px; border:1px solid #B03A5B; font-family:'Jost',sans-serif; font-weight:600; font-size:13px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; transition:background .3s, color .3s">Volver</button>
+      </div>
+
+      <p data-cta-error hidden style="margin:0; max-width:34ch; font-size:13px; line-height:1.5; color:#8E1428; text-align:center"></p>
+    </div>
 
   </div>
 </header>
@@ -231,6 +250,8 @@
   <div aria-hidden="true" style="position:absolute; width:42vw; height:42vw; right:-14vw; bottom:-6%; border-radius:50%; pointer-events:none; background:radial-gradient(closest-side, rgba(190,109,131,.26), rgba(190,109,131,0)); filter:blur(4px); animation:drift 22s ease-in-out infinite 3s"></div>
 
   <div style="position:relative; max-width:620px; margin:0 auto">
+
+    <span id="confirmacion" aria-hidden="true" style="display:block; scroll-margin-top:24px"></span>
 
     <div data-reveal style="opacity:0; transform:translateY(24px); transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1); text-align:center">
       <p style="margin:0; font-family:'Jost',sans-serif; font-weight:500; font-size:14px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Confirmación</p>
@@ -356,7 +377,7 @@
 
     <div data-ok hidden style="margin-top:clamp(34px,6vw,54px); padding:clamp(36px,7vw,60px) clamp(24px,5vw,40px); text-align:center; background:linear-gradient(#FDF7F5, #F6E3E6); border:1px solid rgba(255,255,255,.9); box-shadow:0 46px 90px -46px rgba(60,24,40,.55), inset 0 1px 0 #fff">
       <i class="ph ph-check" style="font-size:30px; color:#B03A5B"></i>
-      <p style="margin:14px 0 0; font-family:'Bodoni Moda',serif; font-weight:500; font-style:italic; font-size:28px; line-height:1.2; color:#141014">¡Gracias por confirmar!</p>
+      <p data-ok-titulo style="margin:14px 0 0; font-family:'Bodoni Moda',serif; font-weight:500; font-style:italic; font-size:28px; line-height:1.2; color:#141014">¡Gracias por confirmar!</p>
       <p style="margin:12px 0 0; font-size:16px; color:#5a5360">Nos vemos el 4 de septiembre.</p>
     </div>
 
@@ -776,7 +797,16 @@ const CONFIG = {
         const res = await pedirAlScript(datos);
         if (!res || !res.ok) throw new Error(mensajeDeError(res));
 
-        try { sessionStorage.removeItem(SESION); } catch (e) {}
+        const modificacion = !!(invitado && invitado.estado === "confirmado");
+        if (invitado) {
+          invitado.estado = "confirmado";
+          invitado.respuestas = (res && res.respuestas) || invitado.respuestas;
+          guardarSesion();
+        }
+        pintarCTA(false);
+        ctaMensaje("");
+        const okTitulo = $("[data-ok-titulo]");
+        if (okTitulo) okTitulo.textContent = modificacion ? "¡Listo, lo actualizamos!" : "¡Gracias por confirmar!";
         form.hidden = true;
         const ok = $("[data-ok]");
         if (ok) { ok.hidden = false; setTimeout(() => irA(ok), 60); }
@@ -810,6 +840,82 @@ const CONFIG = {
   function pideAdulto()    { return !!(invitado && invitado.menor); }
   function ofreceTransfer() { return !!(invitado && invitado.punto); }
 
+  const cta         = $("[data-cta]");
+  const ctaNuevo    = $("[data-cta-nuevo]");
+  const ctaTitulo   = $("[data-cta-titulo]");
+  const ctaAcciones = $("[data-cta-acciones]");
+  const ctaSeguro   = $("[data-cta-seguro]");
+  const ctaError    = $("[data-cta-error]");
+  const ctaForm     = $("[data-cta-form]");
+  const ctaCancelar = $("[data-cta-cancelar]");
+  const ctaSi       = $("[data-cta-si]");
+  const ctaNo       = $("[data-cta-no]");
+  let cancelando = false;
+
+  const TITULO_CTA = {
+    confirmado: "Confirmaste tu asistencia",
+    cancelado: "Confirmaste que no asistirás"
+  };
+
+  function guardarSesion() {
+    try { sessionStorage.setItem(SESION, JSON.stringify(invitado)); } catch (e) {}
+  }
+
+  function ctaMensaje(texto) {
+    if (!ctaError) return;
+    ctaError.textContent = texto || "";
+    ctaError.hidden = !texto;
+  }
+
+  function pintarCTA(preguntando) {
+    if (!cta) return;
+    const estado = (invitado && invitado.estado) || "nuevo";
+    const nuevo = estado === "nuevo";
+    if (ctaNuevo) ctaNuevo.hidden = !nuevo;
+    if (ctaTitulo) {
+      ctaTitulo.hidden = nuevo;
+      ctaTitulo.textContent = preguntando ? "¿Seguro que querés cancelar?" : (TITULO_CTA[estado] || "");
+    }
+    if (ctaAcciones) ctaAcciones.hidden = nuevo || !!preguntando;
+    if (ctaSeguro) ctaSeguro.hidden = !preguntando;
+    if (ctaForm) ctaForm.textContent = estado === "cancelado" ? "Confirmar asistencia" : "Modificar asistencia";
+    if (ctaCancelar) ctaCancelar.hidden = estado !== "confirmado";
+  }
+
+  async function cancelarAsistencia() {
+    if (!invitado || cancelando) return;
+    cancelando = true;
+    ctaMensaje("");
+    if (ctaSi) { ctaSi.disabled = true; ctaSi.textContent = "Cancelando"; }
+    if (ctaNo) ctaNo.disabled = true;
+
+    const res = await pedirAlScript({ action: "cancelar", code: invitado.code });
+
+    cancelando = false;
+    if (ctaSi) { ctaSi.disabled = false; ctaSi.textContent = "Sí, cancelar"; }
+    if (ctaNo) ctaNo.disabled = false;
+
+    if (!res || !res.ok) {
+      pintarCTA(false);
+      ctaMensaje(mensajeDeError(res));
+      return;
+    }
+
+    invitado.estado = "cancelado";
+    invitado.respuestas = res.respuestas || {};
+    guardarSesion();
+    precargar(invitado);
+    const ok = $("[data-ok]");
+    if (ok) ok.hidden = true;
+    if (form) form.hidden = false;
+    pintarCTA(false);
+  }
+
+  if (ctaForm) ctaForm.addEventListener("click", abrirFormulario);
+  if (ctaCancelar) ctaCancelar.addEventListener("click", () => { ctaMensaje(""); pintarCTA(true); });
+  if (ctaNo) ctaNo.addEventListener("click", () => pintarCTA(false));
+  if (ctaSi) ctaSi.addEventListener("click", cancelarAsistencia);
+
   async function pedirAlScript(payload) {
     try {
       const res = await fetch(CONFIG.SCRIPT_URL, {
@@ -826,7 +932,7 @@ const CONFIG = {
 
   function mensajeDeError(res) {
     const e = res && res.error;
-    if (e === "usado")      return "Este código ya confirmó" + (res.fecha ? " el " + res.fecha : "") + ". Si necesitás cambiar algo, escribinos.";
+    if (e === "ocupado")    return "Hay otra confirmación en curso. Probá de nuevo en unos segundos.";
     if (e === "invalido")   return "Ese código no es válido. Revisá el link que te mandamos.";
     if (e === "incompleto") return "Falta completar un dato del formulario.";
     if (e === "red")        return "No pudimos conectarnos. Revisá tu conexión y probá de nuevo.";
@@ -870,32 +976,84 @@ const CONFIG = {
     if (form.nombre) form.nombre.focus();
   }
 
+  function etiquetaSubmit() {
+    const label = $("[data-submit-label]");
+    if (label) label.textContent = (invitado && invitado.estado === "confirmado") ? "Guardar cambios" : "Confirmar asistencia";
+  }
+
+  function marcarRadio(nombre, valor) {
+    const radios = $$('input[name="' + nombre + '"]');
+    let elegido = null;
+    radios.forEach(i => {
+      i.checked = !!valor && i.value === valor;
+      if (i.checked) elegido = i;
+    });
+    const disparo = elegido || radios[0];
+    if (disparo) disparo.dispatchEvent(new Event("change"));
+  }
+
   function precargar(d) {
     if (!form) return;
-    form.nombre.value = d.nombre || "";
-    form.apellido.value = d.apellido || "";
-    mostrarNombre(d.nombre || "", d.apellido || "");
+    const r = (d && d.respuestas) || {};
+    // Si lo guardado no coincide con la planilla, es que lo escribió a mano.
+    const propio = !!(r.nombre && (r.nombre !== d.nombre || r.apellido !== d.apellido));
 
+    form.nombre.value = r.nombre || d.nombre || "";
+    form.apellido.value = r.apellido || d.apellido || "";
+    mostrarNombre(propio ? "" : (d.nombre || ""), propio ? "" : (d.apellido || ""));
+
+    if (form.telefono) form.telefono.value = r.telefono || "";
     const campoAdulto = $('[data-field="adultoTel"]');
     if (campoAdulto) campoAdulto.hidden = !d.menor;
-    if (!d.menor && form.adultoTel) form.adultoTel.value = "";
+    if (form.adultoTel) form.adultoTel.value = d.menor ? (r.adultoTel || "") : "";
+
+    if (form.menu) {
+      form.menu.value = r.restriccion || "Ninguna";
+      if (form.menu.selectedIndex < 0) form.menu.value = "Ninguna";
+      form.menu.dispatchEvent(new Event("change"));
+    }
+    if (form.restriccionOtra) form.restriccionOtra.value = r.restriccionOtra || "";
+    if (form.cancion) form.cancion.value = r.cancion || "";
 
     // Sin punto de salida cargado no hay transfer para esta persona.
     const bloqueTransfer = $('[data-field="transfer"]');
     if (bloqueTransfer) bloqueTransfer.hidden = !d.punto;
     const texto = $("[data-punto-texto]");
     if (texto) texto.textContent = d.punto || "";
+
+    const usa = !!d.punto && r.transfer === "Sí";
+    marcarRadio("transfer", d.punto ? (r.transfer || "") : "");
+    marcarRadio("ida", usa ? r.ida : "");
+    marcarRadio("vuelta", usa ? r.vuelta : "");
     if (!d.punto) {
-      $$('input[name="transfer"], input[name="ida"], input[name="vuelta"]').forEach(i => { i.checked = false; });
       const detalle = $("[data-transfer-detalle]");
       if (detalle) detalle.style.display = "none";
     }
+
+    etiquetaSubmit();
+  }
+
+  function abrirFormulario() {
+    const ok = $("[data-ok]");
+    if (ok) ok.hidden = true;
+    if (form) form.hidden = false;
+    const btn = $("[data-submit]"), bar = $("[data-submit-bar]");
+    enviando = false;
+    if (btn) btn.disabled = false;
+    if (bar) {
+      if (bar.getAnimations) bar.getAnimations().forEach(a => a.cancel());
+      bar.style.width = "0";
+    }
+    etiquetaSubmit();
+    const destino = document.getElementById("confirmacion");
+    if (destino) destino.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
   }
 
   function abrir(datos) {
     invitado = datos;
-    try { sessionStorage.setItem(SESION, JSON.stringify(datos)); } catch (e) {}
+    guardarSesion();
     precargar(datos);
+    pintarCTA(false);
     try { history.replaceState(null, "", location.pathname); } catch (e) {}
     document.documentElement.removeAttribute("data-gated");
     if (gate) {

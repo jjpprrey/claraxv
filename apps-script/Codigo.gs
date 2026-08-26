@@ -10,14 +10,23 @@ const EDAD_ADULTA = 'Adulto';
 
 const LARGO_MAXIMO = 500;
 
-const COLUMNAS = [
-  COL_CODIGO, 'Name_DB', 'Surname_DB', 'Age_Range', 'Transfer_Site',
-  'Timestamp', 'Assistance_Confirmation', 'Name_Invite', 'Surname_Invite',
-  'Phone', 'Adult_phone', 'Transfer_use_outbound', 'Transfer_use_inbound',
+const COL_RESPUESTA = [
+  'Assistance_Confirmation', 'Name_Invite', 'Surname_Invite', 'Phone', 'Adult_phone',
+  'Transfer_use_outbound', 'Transfer_use_inbound',
   'Dietary_restrictions', 'Dietary_restrictions_other', 'Song_preferece'
 ];
 
+// Sheets se come el + y reformatea los números largos si la celda no es texto.
+const COL_LITERAL = ['Phone', 'Adult_phone'];
+
+const COLUMNAS = [
+  COL_CODIGO, 'Name_DB', 'Surname_DB', 'Age_Range', 'Transfer_Site', 'Timestamp'
+].concat(COL_RESPUESTA);
+
 const ASISTE = 'Sí, ahí voy a estar';
+const NO_ASISTE = 'No voy a poder ir';
+
+const ACCION = { nuevo: 'alta', confirmado: 'modificacion', cancelado: 'reconfirmacion' };
 
 function doGet(e) {
   const params = (e && e.parameter) || {};
@@ -33,6 +42,7 @@ function doPost(e) {
     return json({ ok: false, error: 'formato' });
   }
   if (datos.action === 'lookup') return json(lookup(datos.code));
+  if (datos.action === 'cancelar') return json(cancelar(datos));
   return json(confirmar(datos));
 }
 
@@ -45,14 +55,16 @@ function calentar() {
 function lookup(codigo) {
   const ctx = ubicar(codigo);
   if (ctx.error) return { ok: false, error: ctx.error, falta: ctx.falta };
-  if (ctx.usado) return { ok: false, error: 'usado', fecha: ctx.fecha };
   return {
     ok: true,
     code: ctx.codigo,
     nombre: ctx.nombre,
     apellido: ctx.apellido,
     menor: ctx.menor,
-    punto: ctx.punto
+    punto: ctx.punto,
+    estado: ctx.estado,
+    fecha: ctx.fecha,
+    respuestas: respuestas(ctx.previo)
   };
 }
 
@@ -62,16 +74,33 @@ function confirmar(datos) {
   if (!lock.tryLock(20000)) return { ok: false, error: 'ocupado' };
   try {
     const ctx = ubicar(codigo);
-    if (ctx.error) return registrar(codigo, ctx.error, datos, { ok: false, error: ctx.error, falta: ctx.falta });
-    if (ctx.usado) return registrar(codigo, 'usado', datos, { ok: false, error: 'usado', fecha: ctx.fecha });
+    if (ctx.error) return registrar(codigo, 'rechazo:' + ctx.error, {}, datos, { ok: false, error: ctx.error, falta: ctx.falta });
 
     const respuesta = armar(datos, ctx);
-    if (respuesta.campo) return registrar(codigo, 'incompleto:' + respuesta.campo, datos, { ok: false, error: 'incompleto', campo: respuesta.campo });
+    if (respuesta.campo) return registrar(codigo, 'rechazo:incompleto:' + respuesta.campo, ctx.previo, datos, { ok: false, error: 'incompleto', campo: respuesta.campo });
 
-    escribir(ctx, respuesta);
-    return registrar(codigo, 'ok', datos, { ok: true });
+    const escrito = escribir(ctx, respuesta);
+    return registrar(codigo, ACCION[ctx.estado], ctx.previo, escrito, { ok: true, estado: 'confirmado', respuestas: respuestas(escrito) });
   } catch (err) {
-    return registrar(codigo, 'error: ' + err.message, datos, { ok: false, error: 'error' });
+    return registrar(codigo, 'error: ' + err.message, {}, datos, { ok: false, error: 'error' });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function cancelar(datos) {
+  const codigo = normalizar(datos && datos.code);
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return { ok: false, error: 'ocupado' };
+  try {
+    const ctx = ubicar(codigo);
+    if (ctx.error) return registrar(codigo, 'rechazo:' + ctx.error, {}, datos, { ok: false, error: ctx.error, falta: ctx.falta });
+    if (ctx.estado === 'cancelado') return { ok: true, estado: 'cancelado', respuestas: respuestas(ctx.previo) };
+
+    const borrado = borrar(ctx);
+    return registrar(codigo, 'cancelacion', ctx.previo, borrado, { ok: true, estado: 'cancelado', respuestas: respuestas(borrado) });
+  } catch (err) {
+    return registrar(codigo, 'error: ' + err.message, {}, datos, { ok: false, error: 'error' });
   } finally {
     lock.releaseLock();
   }
@@ -100,6 +129,9 @@ function ubicar(codigo) {
   const sitio = String(fila[idx.Transfer_Site] || '').trim();
   const marca = fila[idx.Timestamp];
 
+  const previo = {};
+  COL_RESPUESTA.forEach(function (nombre) { previo[nombre] = texto(fila[idx[nombre]]); });
+
   return {
     hoja: hoja,
     idx: idx,
@@ -110,8 +142,32 @@ function ubicar(codigo) {
     menor: !esAdulto(fila[idx.Age_Range]),
     sitio: sitio,
     punto: PUNTOS[sitio] || '',
-    usado: marca !== '' && marca !== null,
+    previo: previo,
+    estado: estado(marca, previo.Assistance_Confirmation),
     fecha: marca ? Utilities.formatDate(new Date(marca), 'America/Argentina/Buenos_Aires', 'd/M/yyyy') : ''
+  };
+}
+
+function estado(marca, asistencia) {
+  if (marca === '' || marca === null || marca === undefined) return 'nuevo';
+  return texto(asistencia).toLowerCase() === NO_ASISTE.toLowerCase() ? 'cancelado' : 'confirmado';
+}
+
+// Lo que la fila tiene guardado, con los nombres que usa el formulario.
+function respuestas(previo) {
+  const ida = texto(previo.Transfer_use_outbound);
+  const vuelta = texto(previo.Transfer_use_inbound);
+  return {
+    nombre: texto(previo.Name_Invite),
+    apellido: texto(previo.Surname_Invite),
+    telefono: texto(previo.Phone),
+    adultoTel: texto(previo.Adult_phone),
+    restriccion: texto(previo.Dietary_restrictions),
+    restriccionOtra: texto(previo.Dietary_restrictions_other),
+    transfer: (ida || vuelta) ? ((ida === 'Sí' || vuelta === 'Sí') ? 'Sí' : 'No') : '',
+    ida: ida,
+    vuelta: vuelta,
+    cancion: texto(previo.Song_preferece)
   };
 }
 
@@ -159,29 +215,41 @@ function armar(datos, ctx) {
 }
 
 function escribir(ctx, r) {
+  const escrito = {
+    Assistance_Confirmation: ASISTE,
+    Name_Invite: r.nombre,
+    Surname_Invite: r.apellido,
+    Phone: r.telefono,
+    Adult_phone: r.adultoTel,
+    Transfer_use_outbound: r.ida,
+    Transfer_use_inbound: r.vuelta,
+    Dietary_restrictions: r.restriccion,
+    Dietary_restrictions_other: r.restriccionOtra,
+    Song_preferece: r.cancion
+  };
+  volcar(ctx, escrito);
+  return escrito;
+}
+
+function borrar(ctx) {
+  const escrito = {};
+  COL_RESPUESTA.forEach(function (nombre) { escrito[nombre] = ''; });
+  escrito.Assistance_Confirmation = NO_ASISTE;
+  volcar(ctx, escrito);
+  return escrito;
+}
+
+function volcar(ctx, valores) {
   const hoja = ctx.hoja;
   const idx = ctx.idx;
   const fila = ctx.numeroFila;
 
-  const celda = function (columna, valor) {
-    hoja.getRange(fila, idx[columna] + 1).setValue(valor);
-  };
-
-  const celdaTexto = function (columna, valor) {
-    hoja.getRange(fila, idx[columna] + 1).setNumberFormat('@').setValue(valor);
-  };
-
-  celda('Assistance_Confirmation', ASISTE);
-  celda('Name_Invite', r.nombre);
-  celda('Surname_Invite', r.apellido);
-  celdaTexto('Phone', r.telefono);
-  celdaTexto('Adult_phone', r.adultoTel);
-  celda('Transfer_use_outbound', r.ida);
-  celda('Transfer_use_inbound', r.vuelta);
-  celda('Dietary_restrictions', r.restriccion);
-  celda('Dietary_restrictions_other', r.restriccionOtra);
-  celda('Song_preferece', r.cancion);
-  celda('Timestamp', new Date());
+  COL_RESPUESTA.forEach(function (nombre) {
+    const celda = hoja.getRange(fila, idx[nombre] + 1);
+    if (COL_LITERAL.indexOf(nombre) !== -1) celda.setNumberFormat('@');
+    celda.setValue(valores[nombre]);
+  });
+  hoja.getRange(fila, idx.Timestamp + 1).setValue(new Date());
 }
 
 function hojaInvitados() {
@@ -202,15 +270,13 @@ function indices(encabezados) {
   return mapa;
 }
 
-function registrar(codigo, resultado, datos, respuesta) {
+function registrar(codigo, accion, antes, despues, respuesta) {
   try {
     const libro = SpreadsheetApp.getActive();
     let hoja = libro.getSheetByName(HOJA_LOG);
-    if (!hoja) {
-      hoja = libro.insertSheet(HOJA_LOG);
-      hoja.appendRow(['Fecha', 'Codigo', 'Resultado', 'Datos']);
-    }
-    hoja.appendRow([new Date(), codigo, resultado, JSON.stringify(datos || {})]);
+    if (!hoja) hoja = libro.insertSheet(HOJA_LOG);
+    if (!hoja.getLastRow()) hoja.appendRow(['Fecha', 'Codigo', 'Accion', 'Antes', 'Despues']);
+    hoja.appendRow([new Date(), codigo, accion, JSON.stringify(antes || {}), JSON.stringify(despues || {})]);
   } catch (err) {}
   return respuesta;
 }

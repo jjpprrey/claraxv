@@ -28,6 +28,7 @@ function hojaFalsa(nombre, datos) {
       };
       return rango;
     },
+    getLastRow: () => datos.length,
     appendRow: r => datos.push(r)
   };
 }
@@ -48,7 +49,7 @@ function entorno(filas) {
 }
 
 const src = fs.readFileSync(__dirname + '/Codigo.gs', 'utf8');
-eval(src + '\nglobal.__api = { lookup, confirmar, ubicar };');
+eval(src + '\nglobal.__api = { lookup, confirmar, cancelar, ubicar };');
 const api = global.__api;
 
 const base = () => [
@@ -93,10 +94,17 @@ assert.strictEqual(col('Transfer_use_inbound'), 'No');
 assert.strictEqual(col('Song_preferece'), 'Súperestrella');
 assert.ok(col('Timestamp') instanceof Date, 'queda marcado como usado');
 
-// el mismo código no entra dos veces
-assert.strictEqual(api.lookup('KXZKUQ').error, 'usado', 'lookup rechaza el usado');
+// el código sigue entrando: lo que cambia es el estado de la fila
+assert.strictEqual(api.lookup('KXZKUQ').estado, 'confirmado', 'quien ya contestó entra como confirmado');
+assert.strictEqual(api.lookup('PPMUMN').estado, 'nuevo', 'sin marca de tiempo, es nuevo');
 assert.strictEqual(api.lookup('QNNTVJ').punto, '', 'sin sitio cargado, no hay punto que ofrecer');
-assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578' }).error, 'usado', 'confirmar rechaza el usado');
+
+// lo guardado vuelve con los nombres del formulario
+let prev = api.lookup('KXZKUQ').respuestas;
+assert.deepStrictEqual(
+  [prev.nombre, prev.telefono, prev.restriccion, prev.transfer, prev.ida, prev.vuelta, prev.cancion],
+  ['Clara', '1126778578', 'Ninguna', 'Sí', 'Sí', 'No', 'Súperestrella'], 'la precarga devuelve lo que se guardó');
+assert.strictEqual(api.lookup('PPMUMN').respuestas.nombre, '', 'una fila sin respuestas no precarga nada');
 
 // al adulto ni se le pide: si igual llega, no se guarda
 e = entorno(base());
@@ -160,8 +168,11 @@ api.confirmar({ code: 'ZZZZZZ' });
 api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' });
 const log = e.libro.getSheetByName('Log').datos;
 assert.strictEqual(log.length, 3, 'encabezado + dos intentos');
-assert.strictEqual(log[1][2], 'invalido');
-assert.strictEqual(log[2][2], 'ok');
+assert.deepStrictEqual(log[0], ['Fecha', 'Codigo', 'Accion', 'Antes', 'Despues']);
+assert.strictEqual(log[1][2], 'rechazo:invalido');
+assert.strictEqual(log[2][2], 'alta');
+assert.strictEqual(JSON.parse(log[2][3]).Name_Invite, '', 'antes de un alta la fila está vacía');
+assert.strictEqual(JSON.parse(log[2][4]).Name_Invite, 'Clara', 'el log guarda lo que se escribió');
 
 // El formato lo valida la página. Acá solo el piso: nada vacío, nada gigante.
 e = entorno(base());
@@ -188,5 +199,68 @@ assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Phone')], '1126778578'
 e = entorno(base());
 assert.strictEqual(enviar({ telefono: '+55 11 91234-5678' }).ok, true, 'número del exterior');
 assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Phone')], '+5511912345678', 'guarda el + y solo los dígitos');
+
+
+// ---- Modificar, cancelar, volver a confirmar ----
+
+const alta = extra => api.confirmar(Object.assign(
+  { code: 'KXZKUQ', nombre: 'Clara', apellido: 'Herrera', telefono: '1126778578',
+    restriccion: 'Ninguna', transfer: 'Sí', ida: 'Sí', vuelta: 'Sí', cancion: 'Súperestrella' }, extra || {}));
+const dato = (fila, nombre) => e.invitados.datos[fila][CABECERA.indexOf(nombre)];
+
+// una modificación pisa lo anterior
+e = entorno(base());
+alta();
+r = alta({ telefono: '1155667788', restriccion: 'Kosher', transfer: 'No', cancion: '' });
+assert.strictEqual(r.ok, true, 'la segunda vez también entra');
+assert.strictEqual(r.estado, 'confirmado');
+assert.strictEqual(dato(1, 'Phone'), '1155667788', 'el teléfono nuevo pisa al viejo');
+assert.strictEqual(dato(1, 'Dietary_restrictions'), 'Kosher');
+assert.strictEqual(dato(1, 'Transfer_use_outbound'), 'No', 'el transfer rechazado pisa al aceptado');
+assert.strictEqual(dato(1, 'Song_preferece'), '', 'un campo vaciado se vacía en la planilla');
+assert.strictEqual(e.libro.getSheetByName('Log').datos[2][2], 'modificacion');
+
+// cancelar borra las respuestas y deja el motivo
+e = entorno(base());
+alta();
+r = api.cancelar({ code: 'KXZKUQ' });
+assert.strictEqual(r.ok, true, 'cancela');
+assert.strictEqual(r.estado, 'cancelado');
+assert.strictEqual(dato(1, 'Assistance_Confirmation'), 'No voy a poder ir');
+['Name_Invite', 'Surname_Invite', 'Phone', 'Adult_phone', 'Transfer_use_outbound',
+ 'Transfer_use_inbound', 'Dietary_restrictions', 'Dietary_restrictions_other', 'Song_preferece']
+  .forEach(c => assert.strictEqual(dato(1, c), '', c + ' se borra al cancelar'));
+assert.ok(dato(1, 'Timestamp') instanceof Date, 'la cancelación también deja marca de tiempo');
+assert.strictEqual(dato(1, 'Name_DB'), 'Clara', 'el dato original no se toca');
+
+// lo cancelado sigue entrando, y lo que había puesto se rescata del log
+assert.strictEqual(api.lookup('KXZKUQ').estado, 'cancelado');
+assert.strictEqual(api.lookup('KXZKUQ').respuestas.telefono, '', 'después de cancelar no queda nada que precargar');
+const cancelacion = e.libro.getSheetByName('Log').datos[2];
+assert.strictEqual(cancelacion[2], 'cancelacion');
+assert.strictEqual(JSON.parse(cancelacion[3]).Phone, '1126778578', 'el log conserva lo que se borró');
+assert.strictEqual(JSON.parse(cancelacion[4]).Assistance_Confirmation, 'No voy a poder ir');
+
+// cancelar dos veces no vuelve a escribir ni ensucia el log
+r = api.cancelar({ code: 'KXZKUQ' });
+assert.deepStrictEqual([r.ok, r.estado], [true, 'cancelado'], 'cancelar de nuevo no falla');
+assert.strictEqual(e.libro.getSheetByName('Log').datos.length, 3, 'no registra una cancelación que no cambió nada');
+
+// y después de cancelar se puede volver a confirmar
+r = alta({ telefono: '1144332211' });
+assert.strictEqual(r.ok, true, 'vuelve a confirmar');
+assert.strictEqual(dato(1, 'Assistance_Confirmation'), 'Sí, ahí voy a estar');
+assert.strictEqual(dato(1, 'Phone'), '1144332211');
+assert.strictEqual(e.libro.getSheetByName('Log').datos[3][2], 'reconfirmacion');
+
+// cancelar un código que no existe no escribe nada
+e = entorno(base());
+assert.strictEqual(api.cancelar({ code: 'ZZZZZZ' }).error, 'invalido');
+assert.strictEqual(e.libro.getSheetByName('Log').datos[1][2], 'rechazo:invalido');
+
+// cancelar antes de contestar deja la fila como quien dijo que no
+e = entorno(base());
+assert.strictEqual(api.cancelar({ code: 'KXZKUQ' }).estado, 'cancelado');
+assert.strictEqual(dato(1, 'Assistance_Confirmation'), 'No voy a poder ir');
 
 console.log('Codigo.gs: todas las pruebas pasaron');
