@@ -249,19 +249,20 @@
       </div>
       <div data-field="nombre" style="display:flex; flex-direction:column; gap:9px">
         <label for="nombre" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Nombre <span style="color:#B03A5B">*</span></label>
-        <input id="nombre" name="nombre" type="text" autocomplete="given-name" aria-required="true" placeholder="Ej: Juan" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+        <input id="nombre" name="nombre" type="text" maxlength="60" autocomplete="given-name" aria-required="true" placeholder="Ej: Juan" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
         <p data-err="nombre" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
       </div>
 
       <div data-field="apellido" style="display:flex; flex-direction:column; gap:9px">
         <label for="apellido" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Apellido <span style="color:#B03A5B">*</span></label>
-        <input id="apellido" name="apellido" type="text" autocomplete="family-name" aria-required="true" placeholder="Ej: Pérez" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+        <input id="apellido" name="apellido" type="text" maxlength="60" autocomplete="family-name" aria-required="true" placeholder="Ej: Pérez" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
         <p data-err="apellido" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
       </div>
 
       <div data-field="telefono" style="display:flex; flex-direction:column; gap:9px">
         <label for="telefono" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Celular del invitado/a <span style="color:#B03A5B">*</span></label>
         <input id="telefono" name="telefono" type="tel" inputmode="numeric" data-solo-tel aria-required="true" placeholder="Ej: 11 2345 6789" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+        <p style="margin:0; font-size:12px; line-height:1.5; color:#6f6673">¿Es un número del exterior? Escribilo con <strong style="font-weight:500">+</strong> y el código de país.</p>
         <p data-err="telefono" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
       </div>
 
@@ -290,7 +291,7 @@
 
           <div data-field="restriccionOtra" style="display:none; flex-direction:column; gap:9px">
             <label for="restriccionOtra" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Cuál? <span style="color:#B03A5B">*</span></label>
-            <input id="restriccionOtra" name="restriccionOtra" type="text" placeholder="Contanos qué no podés comer" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+            <input id="restriccionOtra" name="restriccionOtra" type="text" maxlength="200" placeholder="Contanos qué no podés comer" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
             <p data-err="restriccionOtra" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
           </div>
           <fieldset data-transfer data-field="transfer" style="display:flex; flex-direction:column; gap:9px; border:0; padding:0; margin:0">
@@ -339,7 +340,7 @@
 
           <div data-field="cancion" style="display:flex; flex-direction:column; gap:9px">
             <label for="cancion" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Qué canción no puede faltar?</label>
-            <input id="cancion" name="cancion" type="text" placeholder="Artista y canción" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+            <input id="cancion" name="cancion" type="text" maxlength="500" placeholder="Artista y canción" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
             <p data-err="cancion" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
           </div>
         </div>
@@ -379,7 +380,7 @@
    ===================================================================== */
 const CONFIG = {
   // URL del despliegue del Google Apps Script (termina en /exec).
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzefPjgyXF_JcXK22DBfoU32_tkOR-nhtp_98oBocvAQyFUiDwWgLY9PbvfWLXLBzL9/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbxBWUM6wenTdco49NVcnKrk7kqAQISeWxyyd1gUpqUDcTokp5UC_kuGTP9JwzvlJOOL/exec",
 
   EVENTO: {
     FECHA_ISO: "2026-09-04T21:00:00-03:00",  // hora de Argentina (-03:00)
@@ -563,10 +564,23 @@ const CONFIG = {
   }
   $$('input[name="transfer"]').forEach(r => r.addEventListener("change", actualizarTransfer));
 
-  /* -------- Teléfono: solo números y separadores (punto 5) -------- */
+  /* -------- Teléfono: argentino de diez dígitos, o del exterior con + -------- */
+  const TEL_DIGITOS = 10;
+  const TEL_EXT_MIN = 8;
+  const TEL_EXT_MAX = 15;
+  const esInternacional = v => String(v || "").trim().indexOf("+") === 0;
+
   function soloTel(e) {
-    const limpio = e.target.value.replace(/[^\d\s()+\-]/g, "");
-    if (e.target.value !== limpio) e.target.value = limpio;
+    const valor = e.target.value;
+    const tope = esInternacional(valor) ? TEL_EXT_MAX : TEL_DIGITOS;
+    let vistos = 0;
+    const limpio = (esInternacional(valor) ? "+" : "") + valor
+      .replace(/[^\d\s()+\-]/g, "")
+      .replace(/\d/g, d => (++vistos > tope ? "" : d))
+      .replace(/\+/g, "");
+    // Recortar no puede volver válido lo que no lo era: se avisa.
+    e.target.dataset.sobran = vistos > tope ? "1" : "";
+    if (valor !== limpio) e.target.value = limpio;
   }
   $$("[data-solo-tel]").forEach(inp => inp.addEventListener("input", soloTel));
 
@@ -643,13 +657,25 @@ const CONFIG = {
   }
 
   const OFENSIVO = "Por favor, evitá palabras ofensivas.";
-  const TEL_MSG  = "El celular tiene que tener 10 dígitos (sin 0 ni 15).";
+  const TEL_MSG = "El celular tiene que tener 10 dígitos (sin 0 ni 15). Si es del exterior, escribilo con + y el código de país.";
+  const TEL_PREFIJO_MSG = "Escribilo sin 0 y sin 15: empieza por la característica (ej: 11 2345 6789). Si es del exterior, poné + adelante.";
+  const TEL_EXT_MSG = "Un número del exterior lleva entre 8 y 15 dígitos con el código de país (ej: +55 11 91234 5678).";
+  const TEL_SOBRAN_MSG = "Te sobran dígitos. Son 10 para Argentina, o hasta 15 empezando con + si es del exterior.";
+
+  function errorTel(valor, campo) {
+    if (campo && campo.dataset.sobran) return TEL_SOBRAN_MSG;
+    const d = String(valor || "").replace(/\D/g, "");
+    if (esInternacional(valor)) return (d.length >= TEL_EXT_MIN && d.length <= TEL_EXT_MAX) ? "" : TEL_EXT_MSG;
+    if (d.length !== TEL_DIGITOS) return TEL_MSG;
+    if (!/^[123]/.test(d)) return TEL_PREFIJO_MSG;
+    return "";
+  }
 
   function validar() {
     const nombre    = form.nombre.value.trim();
     const apellido  = form.apellido.value.trim();
-    const tel       = form.telefono.value.replace(/\D/g, "");
-    const adultoTel = form.adultoTel.value.replace(/\D/g, "");
+    const tel       = form.telefono.value;
+    const adultoTel = form.adultoTel.value;
     const cancion   = form.cancion.value.trim();
     const transferSel = form.querySelector('input[name="transfer"]:checked');
     const usaTransfer = transferSel && transferSel.value === "Sí";
@@ -665,10 +691,13 @@ const CONFIG = {
     if (apellido.length < 2) V.apellido = "Necesitamos tu apellido.";
     else if (tieneInsulto(apellido)) V.apellido = OFENSIVO;
     else if (!parecePalabra(apellido)) V.apellido = "Ingresá un apellido real, solo con letras.";
-    // Teléfono invitado
-    if (tel.length !== 10) V.telefono = TEL_MSG;
-    // Teléfono adulto responsable
-    if (pideAdulto() && adultoTel.length !== 10) V.adultoTel = TEL_MSG;
+    // Teléfonos: argentino de diez dígitos, o del exterior con código de país
+    const malTel = errorTel(tel, form.telefono);
+    if (malTel) V.telefono = malTel;
+    if (pideAdulto()) {
+      const malAdulto = errorTel(adultoTel, form.adultoTel);
+      if (malAdulto) V.adultoTel = malAdulto;
+    }
     // Transfer: solo si a esta persona se le ofrece
     if (ofreceTransfer() && !transferSel) V.transfer = "Elegí una opción.";
     if (usaTransfer && !idaSel) V.ida = "Elegí una opción.";

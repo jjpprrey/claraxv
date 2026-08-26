@@ -8,6 +8,8 @@ const PUNTOS = {
 
 const EDAD_ADULTA = 'Adulto';
 
+const LARGO_MAXIMO = 500;
+
 const COLUMNAS = [
   COL_CODIGO, 'Name_DB', 'Surname_DB', 'Age_Range', 'Transfer_Site',
   'Timestamp', 'Assistance_Confirmation', 'Name_Invite', 'Surname_Invite',
@@ -111,32 +113,42 @@ function armar(datos, ctx) {
   const d = datos || {};
   const nombre = texto(d.nombre) || ctx.nombre;
   const apellido = texto(d.apellido) || ctx.apellido;
-  const telefono = digitos(d.telefono);
-  const adultoTel = digitos(d.adultoTel);
+  const telefono = normalizarTel(d.telefono);
+  const adultoTel = normalizarTel(d.adultoTel);
+  const restriccion = texto(d.restriccion);
+  const restriccionOtra = restriccion === 'Otra' ? texto(d.restriccionOtra) : '';
+  const cancion = texto(d.cancion);
   const ofrece = !!ctx.punto;
   const transfer = ofrece ? texto(d.transfer) : '';
   const usaTransfer = transfer === 'Sí';
+  const contesto = transfer === 'Sí' || transfer === 'No';
 
-  if (!nombre) return { campo: 'nombre' };
-  if (!apellido) return { campo: 'apellido' };
-  if (telefono.length !== 10) return { campo: 'telefono' };
-  if (ctx.menor && adultoTel.length !== 10) return { campo: 'adultoTel' };
-  if (!texto(d.restriccion)) return { campo: 'restriccion' };
-  if (texto(d.restriccion) === 'Otra' && !texto(d.restriccionOtra)) return { campo: 'restriccionOtra' };
-  if (ofrece && transfer !== 'Sí' && transfer !== 'No') return { campo: 'transfer' };
-  if (usaTransfer && !texto(d.ida)) return { campo: 'ida' };
-  if (usaTransfer && !texto(d.vuelta)) return { campo: 'vuelta' };
+  const campos = {
+    nombre: nombre,
+    apellido: apellido,
+    telefono: telefono,
+    adultoTel: ctx.menor ? adultoTel : 'n/a',
+    restriccion: restriccion
+  };
+  for (const campo in campos) {
+    if (!campos[campo]) return { campo: campo };
+  }
+
+  const textos = [nombre, apellido, telefono, adultoTel, restriccion, restriccionOtra, cancion];
+  for (let i = 0; i < textos.length; i++) {
+    if (textos[i].length > LARGO_MAXIMO) return { campo: 'largo' };
+  }
 
   return {
     nombre: nombre,
     apellido: apellido,
     telefono: telefono,
     adultoTel: ctx.menor ? adultoTel : '',
-    restriccion: texto(d.restriccion),
-    restriccionOtra: texto(d.restriccion) === 'Otra' ? texto(d.restriccionOtra) : '',
-    ida: ofrece ? (usaTransfer ? texto(d.ida) : 'No') : '',
-    vuelta: ofrece ? (usaTransfer ? texto(d.vuelta) : 'No') : '',
-    cancion: texto(d.cancion)
+    restriccion: restriccion,
+    restriccionOtra: restriccionOtra,
+    ida: contesto ? (usaTransfer ? texto(d.ida) : 'No') : '',
+    vuelta: contesto ? (usaTransfer ? texto(d.vuelta) : 'No') : '',
+    cancion: cancion
   };
 }
 
@@ -149,11 +161,15 @@ function escribir(ctx, r) {
     hoja.getRange(fila, idx[columna] + 1).setValue(valor);
   };
 
+  const celdaTexto = function (columna, valor) {
+    hoja.getRange(fila, idx[columna] + 1).setNumberFormat('@').setValue(valor);
+  };
+
   celda('Assistance_Confirmation', ASISTE);
   celda('Name_Invite', r.nombre);
   celda('Surname_Invite', r.apellido);
-  celda('Phone', r.telefono);
-  celda('Adult_phone', r.adultoTel);
+  celdaTexto('Phone', r.telefono);
+  celdaTexto('Adult_phone', r.adultoTel);
   celda('Transfer_use_outbound', r.ida);
   celda('Transfer_use_inbound', r.vuelta);
   celda('Dietary_restrictions', r.restriccion);
@@ -191,6 +207,11 @@ function registrar(codigo, resultado, datos, respuesta) {
     hoja.appendRow([new Date(), codigo, resultado, JSON.stringify(datos || {})]);
   } catch (err) {}
   return respuesta;
+}
+
+function normalizarTel(valor) {
+  const crudo = texto(valor);
+  return crudo.indexOf('+') === 0 ? '+' + digitos(crudo) : digitos(crudo);
 }
 
 function esAdulto(valor) {

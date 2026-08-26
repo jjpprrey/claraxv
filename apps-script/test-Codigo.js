@@ -20,10 +20,14 @@ function hojaFalsa(nombre, datos) {
     datos: datos,
     getLastColumn: () => datos[0].length,
     getDataRange: () => ({ getValues: () => datos }),
-    getRange: (f, c, nf, nc) => ({
-      getValues: () => datos.slice(f - 1, f - 1 + (nf || 1)).map(r => r.slice(c - 1, c - 1 + (nc || 1))),
-      setValue: v => { datos[f - 1][c - 1] = v; }
-    }),
+    getRange: (f, c, nf, nc) => {
+      const rango = {
+        getValues: () => datos.slice(f - 1, f - 1 + (nf || 1)).map(r => r.slice(c - 1, c - 1 + (nc || 1))),
+        setValue: v => { datos[f - 1][c - 1] = v; return rango; },
+        setNumberFormat: () => rango
+      };
+      return rango;
+    },
     appendRow: r => datos.push(r)
   };
 }
@@ -122,13 +126,16 @@ assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Transfer_Site')], '', 
 assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Surname_Invite')], 'Martearena', 'guarda el apellido escrito a mano');
 assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Surname_DB')], '', 'no toca el dato original');
 
-// con punto cargado, elegir el transfer sigue siendo obligatorio
+// sin respuesta de transfer no se inventa una: las celdas quedan vacías, no en "No"
 e = entorno(base());
-assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna' }).campo, 'transfer');
+assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna' }).ok, true);
+['Transfer_use_outbound', 'Transfer_use_inbound'].forEach(c =>
+  assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf(c)], '', c + ' vacío si no contestó'));
 
-// "Otra" exige detalle
+// rechazar el transfer sí deja "No" en las dos
 e = entorno(base());
-assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Otra', transfer: 'No' }).campo, 'restriccionOtra');
+api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' });
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Transfer_use_outbound')], 'No');
 
 // códigos duplicados: corta en vez de elegir uno
 e = entorno(base().concat([filaVacia(200, 'KXZKUQ', 'Otra', 'Persona', 'Adulto', 'Recoleta')]));
@@ -155,5 +162,31 @@ const log = e.libro.getSheetByName('Log').datos;
 assert.strictEqual(log.length, 3, 'encabezado + dos intentos');
 assert.strictEqual(log[1][2], 'invalido');
 assert.strictEqual(log[2][2], 'ok');
+
+// El formato lo valida la página. Acá solo el piso: nada vacío, nada gigante.
+e = entorno(base());
+const largo = n => 'a'.repeat(n);
+const enviar = extra => api.confirmar(Object.assign(
+  { code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' }, extra || {}));
+
+assert.strictEqual(enviar({ telefono: '' }).campo, 'telefono', 'sin teléfono no se guarda');
+assert.strictEqual(enviar({ restriccion: '' }).campo, 'restriccion', 'sin restricción no se guarda');
+assert.strictEqual(enviar({ cancion: largo(501) }).campo, 'largo', 'no se puede reventar una celda');
+assert.strictEqual(enviar({ nombre: largo(501) }).campo, 'largo', 'ni con el nombre');
+assert.strictEqual(enviar({ cancion: largo(500) }).ok, true, 'quinientos justos entran');
+
+// el menor sigue necesitando el celular del adulto: eso lo decide la planilla, no el form
+e = entorno(base());
+assert.deepStrictEqual([enviar({ code: 'PPMUMN' }).error, enviar({ code: 'PPMUMN' }).campo],
+  ['incompleto', 'adultoTel'], 'menor sin celular del adulto');
+
+// el teléfono se guarda normalizado, con el + si venía del exterior
+e = entorno(base());
+assert.strictEqual(enviar({ telefono: '11 2677-8578' }).ok, true, 'guiones y espacios entran');
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Phone')], '1126778578', 'se guarda sin separadores');
+
+e = entorno(base());
+assert.strictEqual(enviar({ telefono: '+55 11 91234-5678' }).ok, true, 'número del exterior');
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Phone')], '+5511912345678', 'guarda el + y solo los dígitos');
 
 console.log('Codigo.gs: todas las pruebas pasaron');
