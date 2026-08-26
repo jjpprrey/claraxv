@@ -1,0 +1,159 @@
+const fs = require('fs');
+const assert = require('assert');
+
+const CABECERA = [
+  'ID_Guest', 'Invite_Unique_Code', 'Invite_Link', 'Name_DB', 'Surname_DB', 'Age_Range',
+  'Guest_Host_Relation', 'Transfer_Site', 'Timestamp', 'Assistance_Confirmation',
+  'Name_Invite', 'Surname_Invite', 'Phone', 'Adult_phone', 'Transfer_use_outbound',
+  'Transfer_use_inbound', 'Dietary_restrictions', 'Dietary_restrictions_other', 'Song_preferece'
+];
+
+function filaVacia(id, code, nombre, apellido, edad, sitio) {
+  const f = new Array(CABECERA.length).fill('');
+  f[0] = id; f[1] = code; f[3] = nombre; f[4] = apellido; f[5] = edad; f[7] = sitio;
+  return f;
+}
+
+function hojaFalsa(nombre, datos) {
+  return {
+    nombre: nombre,
+    datos: datos,
+    getLastColumn: () => datos[0].length,
+    getDataRange: () => ({ getValues: () => datos }),
+    getRange: (f, c, nf, nc) => ({
+      getValues: () => datos.slice(f - 1, f - 1 + (nf || 1)).map(r => r.slice(c - 1, c - 1 + (nc || 1))),
+      setValue: v => { datos[f - 1][c - 1] = v; }
+    }),
+    appendRow: r => datos.push(r)
+  };
+}
+
+function entorno(filas) {
+  const invitados = hojaFalsa('Lista Invitados', [CABECERA.slice()].concat(filas));
+  const libro = {
+    hojas: [invitados],
+    getSheets() { return this.hojas; },
+    getSheetByName(n) { return this.hojas.find(h => h.nombre === n) || null; },
+    insertSheet(n) { const h = hojaFalsa(n, []); this.hojas.push(h); return h; }
+  };
+  global.SpreadsheetApp = { getActive: () => libro };
+  global.LockService = { getScriptLock: () => ({ tryLock: () => true, releaseLock() {} }) };
+  global.Utilities = { formatDate: d => new Date(d).toLocaleDateString('es-AR') };
+  global.ContentService = { MimeType: { JSON: 'json' }, createTextOutput: t => ({ setMimeType: () => t }) };
+  return { libro, invitados };
+}
+
+const src = fs.readFileSync(__dirname + '/Codigo.gs', 'utf8');
+eval(src + '\nglobal.__api = { lookup, confirmar, ubicar };');
+const api = global.__api;
+
+const base = () => [
+  filaVacia(3, 'KXZKUQ', 'Clara', 'Herrera', 'Adulto', 'Recoleta'),
+  filaVacia(7, 'PPMUMN', 'Julia', 'Armani', 'Menor 18', 'Recoleta'),
+  filaVacia(61, 'QNNTVJ', 'Amiga de Carmen', '', 'Adulto', ''),
+  filaVacia(30, 'XUBPGE', 'Felix o Margarita', '—', 'Adulto', 'Recoleta'),
+  filaVacia(78, 'HDKBIS', 'Maitena', 'Undank', 'Menor 18', 'Palermo'),
+  filaVacia(200, 'WQWDEE', 'Invitado', 'Nuevo', '', 'Recoleta')
+];
+
+// lookup
+let e = entorno(base());
+let r = api.lookup('kxzkuq');
+assert.deepStrictEqual([r.ok, r.nombre, r.apellido, r.menor, r.punto],
+  [true, 'Clara', 'Herrera', false, 'Recoleta · 20:15 hs'], 'lookup adulto Recoleta');
+
+assert.strictEqual(api.lookup('HDKBIS').punto, 'Av. Corrientes y Scalabrini Ortiz · 19:50 hs', 'Palermo mapea al punto de Corrientes');
+assert.strictEqual(api.lookup('PPMUMN').menor, true, 'Menor 18 pide celular del adulto');
+assert.strictEqual(api.lookup('KXZKUQ').menor, false, 'Adulto no pide celular del adulto');
+assert.strictEqual(api.lookup('WQWDEE').menor, true, 'sin rango de edad cargado, se pide igual');
+assert.strictEqual(api.lookup('XUBPGE').apellido, '', 'el guion largo no es apellido');
+assert.strictEqual(api.lookup('ZZZZZZ').error, 'invalido');
+assert.strictEqual(api.lookup('  kxz kuq ').ok, true, 'normaliza espacios y minúsculas');
+assert.strictEqual(api.lookup('KXZ').error, 'invalido', 'código corto');
+
+// confirmar: caso feliz
+e = entorno(base());
+r = api.confirmar({
+  code: 'KXZKUQ', nombre: 'Clara', apellido: 'Herrera', telefono: '11 2677-8578',
+  restriccion: 'Ninguna', transfer: 'Sí', ida: 'Sí', vuelta: 'No', cancion: 'Súperestrella'
+});
+assert.strictEqual(r.ok, true, 'confirma');
+let fila = e.invitados.datos[1];
+const col = n => fila[CABECERA.indexOf(n)];
+assert.strictEqual(col('Assistance_Confirmation'), 'Sí, ahí voy a estar');
+assert.strictEqual(col('Name_Invite'), 'Clara');
+assert.strictEqual(col('Phone'), '1126778578', 'el teléfono se guarda sin separadores');
+assert.strictEqual(col('Adult_phone'), '', 'adulto no guarda celular de responsable');
+assert.strictEqual(col('Transfer_use_outbound'), 'Sí');
+assert.strictEqual(col('Transfer_use_inbound'), 'No');
+assert.strictEqual(col('Song_preferece'), 'Súperestrella');
+assert.ok(col('Timestamp') instanceof Date, 'queda marcado como usado');
+
+// el mismo código no entra dos veces
+assert.strictEqual(api.lookup('KXZKUQ').error, 'usado', 'lookup rechaza el usado');
+assert.strictEqual(api.lookup('QNNTVJ').punto, '', 'sin sitio cargado, no hay punto que ofrecer');
+assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578' }).error, 'usado', 'confirmar rechaza el usado');
+
+// al adulto ni se le pide: si igual llega, no se guarda
+e = entorno(base());
+api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', adultoTel: '1199999999', restriccion: 'Ninguna', transfer: 'No' });
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Adult_phone')], '', 'el adulto nunca guarda celular de responsable');
+
+// menor sin celular del adulto
+e = entorno(base());
+r = api.confirmar({ code: 'PPMUMN', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' });
+assert.deepStrictEqual([r.error, r.campo], ['incompleto', 'adultoTel'], 'menor sin celular del adulto');
+r = api.confirmar({ code: 'PPMUMN', telefono: '1126778578', adultoTel: '1134558976', restriccion: 'Ninguna', transfer: 'No' });
+assert.strictEqual(r.ok, true, 'menor con celular del adulto');
+assert.strictEqual(e.invitados.datos[2][CABECERA.indexOf('Adult_phone')], '1134558976');
+
+// el navegador no puede cambiar el punto asignado
+e = entorno(base());
+api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'Sí', ida: 'Sí', vuelta: 'Sí', punto: 'Palermo · a las 3 am' });
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Transfer_Site')], 'Recoleta', 'el punto de la planilla manda');
+
+// sin punto cargado no hay transfer, aunque el navegador insista
+e = entorno(base());
+r = api.confirmar({ code: 'QNNTVJ', nombre: 'Carmen', apellido: 'Martearena', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'Sí', ida: 'Sí', vuelta: 'No' });
+assert.strictEqual(r.ok, true, 'confirma sin transfer');
+assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Transfer_Site')], '', 'no completa el sitio faltante');
+['Transfer_use_outbound', 'Transfer_use_inbound'].forEach(c =>
+  assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf(c)], '', c + ' queda vacío si no se le ofrece transfer'));
+assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Surname_Invite')], 'Martearena', 'guarda el apellido escrito a mano');
+assert.strictEqual(e.invitados.datos[3][CABECERA.indexOf('Surname_DB')], '', 'no toca el dato original');
+
+// con punto cargado, elegir el transfer sigue siendo obligatorio
+e = entorno(base());
+assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna' }).campo, 'transfer');
+
+// "Otra" exige detalle
+e = entorno(base());
+assert.strictEqual(api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Otra', transfer: 'No' }).campo, 'restriccionOtra');
+
+// códigos duplicados: corta en vez de elegir uno
+e = entorno(base().concat([filaVacia(200, 'KXZKUQ', 'Otra', 'Persona', 'Adulto', 'Recoleta')]));
+assert.strictEqual(api.lookup('KXZKUQ').error, 'duplicado');
+
+// falta una columna: lo dice en vez de escribir en la que no es
+const recortada = [CABECERA.filter(c => c !== 'Phone')].concat([filaVacia(3, 'KXZKUQ', 'Clara', 'Herrera', 'Adulto', 'Recoleta').slice(0, CABECERA.length - 1)]);
+global.SpreadsheetApp = { getActive: () => ({ getSheets: () => [hojaFalsa('x', recortada)], getSheetByName: () => null, insertSheet: n => hojaFalsa(n, []) }) };
+r = api.lookup('KXZKUQ');
+assert.strictEqual(r.error, 'config');
+assert.deepStrictEqual(r.falta, ['Phone']);
+
+// rechazar el transfer deja "No" en las dos, distinto del vacío de quien no lo tiene
+e = entorno(base());
+api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' });
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Transfer_use_outbound')], 'No');
+assert.strictEqual(e.invitados.datos[1][CABECERA.indexOf('Transfer_use_inbound')], 'No');
+
+// el log registra todo
+e = entorno(base());
+api.confirmar({ code: 'ZZZZZZ' });
+api.confirmar({ code: 'KXZKUQ', telefono: '1126778578', restriccion: 'Ninguna', transfer: 'No' });
+const log = e.libro.getSheetByName('Log').datos;
+assert.strictEqual(log.length, 3, 'encabezado + dos intentos');
+assert.strictEqual(log[1][2], 'invalido');
+assert.strictEqual(log[2][2], 'ok');
+
+console.log('Codigo.gs: todas las pruebas pasaron');

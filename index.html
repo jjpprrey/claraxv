@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-gated>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -35,9 +35,32 @@
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation: none !important; }
   }
+  [hidden] { display: none !important; }
+
+  /* Puerta de acceso por código */
+  html[data-gated] { overflow: hidden; }
+  html[data-gated] body > *:not([data-gate]) { display: none !important; }
+  [data-gate] { position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 24px; transition: opacity .32s ease; }
+  [data-gate-input] { text-transform: uppercase; letter-spacing: .3em; text-align: center; font-size: 22px !important; }
+  [data-gate-input]::placeholder { letter-spacing: .1em; font-size: 15px; text-transform: none; }
 </style>
 </head>
 <body>
+
+<!-- ====================== PUERTA (código de invitación) ====================== -->
+<div data-gate>
+  <div style="width:100%; max-width:360px; text-align:center">
+    <p style="margin:0; font-family:'EB Garamond',serif; font-weight:600; font-style:italic; font-size:13px; letter-spacing:.16em; text-transform:uppercase; color:#8a6b78">Los quince de</p>
+    <p style="margin:2px 0 0; font-family:'Alex Brush',cursive; font-style:italic; font-size:clamp(56px,17vw,78px); line-height:1; color:#141014">Clari</p>
+    <p data-gate-estado style="margin:22px 0 18px; font-size:15px; line-height:1.6; color:#5a5360">Escribí el código que te llegó con la invitación</p>
+    <form data-gate-form style="display:flex; flex-direction:column; gap:14px">
+      <input data-gate-input class="field" type="text" maxlength="6" autocomplete="off" spellcheck="false" aria-label="Código de invitación" placeholder="Seis letras" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+      <button type="submit" class="btn-wine" style="position:relative; overflow:hidden; width:100%; display:inline-flex; align-items:center; justify-content:center; padding:18px 30px; border:1px solid #B03A5B; background:#B03A5B; color:#fff; font-family:'Jost',sans-serif; font-weight:600; font-size:15px; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; box-shadow:0 20px 36px -20px rgba(60,24,40,.75); transition:transform .3s cubic-bezier(.16,1,.3,1), box-shadow .3s, background .3s">Entrar</button>
+      <p data-gate-error hidden style="margin:0; font-size:13px; color:#8E1428"></p>
+    </form>
+    <noscript><p style="margin:18px 0 0; font-size:14px; color:#8E1428">Necesitás activar JavaScript para abrir tu invitación.</p></noscript>
+  </div>
+</div>
 
 <!-- ====================== PORTADA (entra en una sola pantalla) ====================== -->
 <header style="position:relative; overflow:hidden; height:100dvh; min-height:480px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:clamp(22px,4dvh,52px) 24px calc(clamp(18px,3dvh,36px) + env(safe-area-inset-bottom)); text-align:center; background:radial-gradient(120% 78% at 50% -12%, rgba(248,222,228,.85) 0%, rgba(248,222,228,0) 60%)">
@@ -219,6 +242,11 @@
     <form data-rsvp-form data-reveal data-delay="1" novalidate style="opacity:0; transform:translateY(24px); transition:opacity .9s cubic-bezier(.16,1,.3,1), transform .9s cubic-bezier(.16,1,.3,1); margin-top:clamp(34px,6vw,54px); display:flex; flex-direction:column; gap:32px; text-align:left; padding:clamp(26px,5vw,46px); background:linear-gradient(#FDF7F5, #F6E3E6); border:1px solid rgba(255,255,255,.9); box-shadow:0 46px 90px -46px rgba(60,24,40,.55), inset 0 1px 0 #fff">
       <input type="text" name="website" data-hp tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0">
 
+      <div data-nombre-fijo hidden style="flex-direction:column; gap:6px">
+        <p style="margin:0; font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Confirmás como</p>
+        <p data-nombre-texto style="margin:0; font-family:'Bodoni Moda',serif; font-weight:500; font-style:italic; line-height:1.2; color:#141014; font-size:26px"></p>
+        <button type="button" data-no-soy-yo style="margin-top:2px; align-self:flex-start; padding:0; border:0; background:none; color:#B03A5B; font-family:'Jost',sans-serif; font-size:13px; text-decoration:underline; cursor:pointer">No soy yo</button>
+      </div>
       <div data-field="nombre" style="display:flex; flex-direction:column; gap:9px">
         <label for="nombre" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Nombre <span style="color:#B03A5B">*</span></label>
         <input id="nombre" name="nombre" type="text" autocomplete="given-name" aria-required="true" placeholder="Ej: Juan" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
@@ -260,6 +288,11 @@
             </div>
           </div>
 
+          <div data-field="restriccionOtra" style="display:none; flex-direction:column; gap:9px">
+            <label for="restriccionOtra" style="font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Cuál? <span style="color:#B03A5B">*</span></label>
+            <input id="restriccionOtra" name="restriccionOtra" type="text" placeholder="Contanos qué no podés comer" class="field" style="width:100%; box-sizing:border-box; border:0; border-bottom:1px solid rgba(36,22,49,.28); background:rgba(255,255,255,.6); color:#141014; font-family:'Jost',sans-serif; font-size:16px; padding:13px 12px; outline:none; border-radius:0; transition:background .3s, border-color .3s">
+            <p data-err="restriccionOtra" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
+          </div>
           <fieldset data-transfer data-field="transfer" style="display:flex; flex-direction:column; gap:9px; border:0; padding:0; margin:0">
             <legend style="padding:0; font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Usás el transfer? <span style="color:#B03A5B">*</span></legend>
             <div style="display:grid; gap:10px; margin-top:4px">
@@ -274,18 +307,10 @@
           </fieldset>
 
           <div data-transfer-detalle style="display:none; flex-direction:column; gap:20px">
-          <fieldset data-transfer-sub data-field="punto" style="display:flex; flex-direction:column; gap:9px; border:0; padding:0; margin:0">
-            <legend style="padding:0; font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Desde qué punto salís? <span style="color:#B03A5B">*</span></legend>
-            <div style="display:grid; gap:10px; margin-top:4px">
-              <label data-opt class="opt" style="display:flex; align-items:center; gap:13px; padding:15px 16px; cursor:pointer; font-size:16px; color:#141014; background:rgba(255,255,255,.55); border:1px solid rgba(36,16,22,.18); transition:border-color .3s, background .3s">
-                <input type="radio" name="punto" value="Av. Corrientes y Scalabrini Ortiz · 19:50 hs" style="accent-color:#B03A5B; width:18px; height:18px; flex:none"><span>Av. Corrientes y Scalabrini Ortiz · 19:50 hs</span>
-              </label>
-              <label data-opt class="opt" style="display:flex; align-items:center; gap:13px; padding:15px 16px; cursor:pointer; font-size:16px; color:#141014; background:rgba(255,255,255,.55); border:1px solid rgba(36,16,22,.18); transition:border-color .3s, background .3s">
-                <input type="radio" name="punto" value="Recoleta · 20:15 hs" style="accent-color:#B03A5B; width:18px; height:18px; flex:none"><span>Recoleta · 20:15 hs</span>
-              </label>
-            </div>
-            <p data-err="punto" hidden style="margin:0; font-size:13px; color:#8E1428"></p>
-          </fieldset>
+          <div data-punto-fijo style="display:flex; flex-direction:column; gap:6px">
+            <p style="margin:0; font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">Tu punto de salida</p>
+            <p data-punto-texto style="margin:0; font-family:'Bodoni Moda',serif; font-weight:500; font-style:italic; font-size:19px; line-height:1.3; color:#141014"></p>
+          </div>
           <fieldset data-transfer-sub data-field="ida" style="display:flex; flex-direction:column; gap:9px; border:0; padding:0; margin:0">
             <legend style="padding:0; font-family:'Jost',sans-serif; font-weight:500; font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:#5a5360">¿Usás transfer a la ida? <span style="color:#B03A5B">*</span></legend>
             <div style="display:grid; gap:10px; margin-top:4px">
@@ -354,7 +379,7 @@
    ===================================================================== */
 const CONFIG = {
   // URL del despliegue del Google Apps Script (termina en /exec).
-  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzoJdN6NB7bERClcfK61BV9lJo7SZnXktiO_8Vpp39yvOakEoReXMd1QiT4JMP-s0lpyQ/exec",
+  SCRIPT_URL: "https://script.google.com/macros/s/AKfycbzefPjgyXF_JcXK22DBfoU32_tkOR-nhtp_98oBocvAQyFUiDwWgLY9PbvfWLXLBzL9/exec",
 
   EVENTO: {
     FECHA_ISO: "2026-09-04T21:00:00-03:00",  // hora de Argentina (-03:00)
@@ -372,16 +397,6 @@ const CONFIG = {
 
   WHATSAPP: "",   // formato 549XXXXXXXXXX. Si el envío falla, ofrece confirmar por WhatsApp.
 
-  // ------------------------------------------------------------------
-  // LISTA DE INVITADOS. Cargá acá los nombres habilitados a confirmar.
-  // Solo quien escriba un nombre de esta lista podrá enviar el formulario.
-  // No distingue mayúsculas ni tildes.
-  // Si la dejás VACÍA, cualquiera con el link puede confirmar.
-  // ------------------------------------------------------------------
-  INVITADOS: [
-    // "María Pérez",
-    // "Juan Gómez",
-  ],
 
   // ------------------------------------------------------------------
   // PALABRAS BLOQUEADAS. Si un campo de texto (nombre, adulto, canción)
@@ -525,7 +540,6 @@ const CONFIG = {
   $$('input[name="transfer"]').forEach(r => r.addEventListener("change", e => pintarOpciones(e.target.name)));
   $$('input[name="ida"]').forEach(r => r.addEventListener("change", e => pintarOpciones(e.target.name)));
   $$('input[name="vuelta"]').forEach(r => r.addEventListener("change", e => pintarOpciones(e.target.name)));
-  $$('input[name="punto"]').forEach(r => r.addEventListener("change", e => pintarOpciones(e.target.name)));
 
   /* -------- Detalle del transfer (punto / ida / vuelta) solo si lo usa -------- */
   const bloqueDetalle = $("[data-transfer-detalle]");
@@ -538,8 +552,8 @@ const CONFIG = {
     if (bloqueDetalle) bloqueDetalle.style.display = usa ? "flex" : "none";
     if (!usa) {
       // si no usa el transfer, limpiamos punto/ida/vuelta y sus errores
-      $$('input[name="punto"], input[name="ida"], input[name="vuelta"]').forEach(i => { i.checked = false; });
-      ["punto", "ida", "vuelta"].forEach(n => {
+      $$('input[name="ida"], input[name="vuelta"]').forEach(i => { i.checked = false; });
+      ["ida", "vuelta"].forEach(n => {
         pintarOpciones(n);
         if (typeof err !== "undefined") err[n] = false;
         const p = document.querySelector('[data-err="' + n + '"]');
@@ -583,12 +597,6 @@ const CONFIG = {
   /* -------- Lista de invitados y filtro de insultos -------- */
   function normalizar(s) {
     return (s == null ? "" : String(s)).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-  }
-  function enLista(nombre) {
-    const lista = CONFIG.INVITADOS || [];
-    if (!lista.length) return true;              // lista vacía = abierto a cualquiera
-    const n = normalizar(nombre);
-    return lista.some(x => normalizar(x) === n);
   }
   function tieneInsulto(texto) {
     const lista = CONFIG.INSULTOS || [];
@@ -647,7 +655,6 @@ const CONFIG = {
     const usaTransfer = transferSel && transferSel.value === "Sí";
     const idaSel      = form.querySelector('input[name="ida"]:checked');
     const vueltaSel   = form.querySelector('input[name="vuelta"]:checked');
-    const puntoSel    = form.querySelector('input[name="punto"]:checked');
 
     const V = {};
     // Nombre
@@ -658,22 +665,24 @@ const CONFIG = {
     if (apellido.length < 2) V.apellido = "Necesitamos tu apellido.";
     else if (tieneInsulto(apellido)) V.apellido = OFENSIVO;
     else if (!parecePalabra(apellido)) V.apellido = "Ingresá un apellido real, solo con letras.";
-    // Lista de invitados (sobre nombre + apellido)
-    if (!V.nombre && !V.apellido && !enLista(nombre + " " + apellido)) V.nombre = "No encontramos ese nombre en la lista de invitados.";
     // Teléfono invitado
     if (tel.length !== 10) V.telefono = TEL_MSG;
     // Teléfono adulto responsable
-    if (adultoTel.length !== 10) V.adultoTel = TEL_MSG;
-    // Transfer
-    if (!transferSel) V.transfer = "Elegí una opción.";
-    // Punto / ida / vuelta: obligatorios solo si usa el transfer
-    if (usaTransfer && !puntoSel) V.punto = "Elegí desde qué punto salís.";
+    if (pideAdulto() && adultoTel.length !== 10) V.adultoTel = TEL_MSG;
+    // Transfer: solo si a esta persona se le ofrece
+    if (ofreceTransfer() && !transferSel) V.transfer = "Elegí una opción.";
     if (usaTransfer && !idaSel) V.ida = "Elegí una opción.";
     if (usaTransfer && !vueltaSel) V.vuelta = "Elegí una opción.";
+    // Restricción alimentaria: "Otra" pide detalle
+    if (form.menu.value === "Otra") {
+      const otra = form.restriccionOtra.value.trim();
+      if (otra.length < 3) V.restriccionOtra = "Contanos cuál es la restricción.";
+      else if (tieneInsulto(otra)) V.restriccionOtra = OFENSIVO;
+    }
     // Canción (opcional; solo se revisa que no tenga insultos)
     if (cancion && tieneInsulto(cancion)) V.cancion = OFENSIVO;
 
-    const orden = ["nombre", "apellido", "telefono", "adultoTel", "transfer", "punto", "ida", "vuelta", "cancion"];
+    const orden = ["nombre", "apellido", "telefono", "adultoTel", "restriccionOtra", "transfer", "ida", "vuelta", "cancion"];
     err = {};
     orden.forEach(name => {
       err[name] = !!V[name];
@@ -693,7 +702,7 @@ const CONFIG = {
       if (name && err[name]) { err[name] = false; marcarError(name, ""); }
     });
     form.addEventListener("change", e => {
-      ["transfer", "punto", "ida", "vuelta"].forEach(n => {
+      ["transfer", "ida", "vuelta"].forEach(n => {
         if (e.target.name === n && err[n]) { err[n] = false; marcarError(n, ""); }
       });
     });
@@ -709,23 +718,22 @@ const CONFIG = {
       if (!validar()) return;                            // no deja pasar sin obligatorios
 
       const fd = new FormData(form);
-      const transfer = fd.get("transfer") || "";
+      const transfer = ofreceTransfer() ? (fd.get("transfer") || "") : "";
       const usa = transfer === "Sí";
-      const nombre = (fd.get("nombre") || "").trim();
-      const apellido = (fd.get("apellido") || "").trim();
+      const restriccion = fd.get("menu") || "Ninguna";
       const datos = {
-        nombre: (nombre + " " + apellido).trim(),           // nombre + apellido juntos
-        asistencia: "Sí, ahí voy a estar",
+        action: "confirmar",
+        code: invitado ? invitado.code : "",
+        nombre: (fd.get("nombre") || "").trim(),
+        apellido: (fd.get("apellido") || "").trim(),
         telefono: (fd.get("telefono") || "").trim(),
-        adulto: "",
-        adultoTel: (fd.get("adultoTel") || "").trim(),      // celular del adulto responsable
-        menu: fd.get("menu") || "Ninguna",
+        adultoTel: pideAdulto() ? (fd.get("adultoTel") || "").trim() : "",
+        restriccion: restriccion,
+        restriccionOtra: restriccion === "Otra" ? (fd.get("restriccionOtra") || "").trim() : "",
         transfer: transfer,
-        transferIda: usa ? (fd.get("ida") || "") : "",
-        transferVuelta: usa ? (fd.get("vuelta") || "") : "",
-        cancion: (fd.get("cancion") || "").trim(),
-        mensaje: "",
-        puntoTransfer: usa ? (fd.get("punto") || "") : ""
+        ida: usa ? (fd.get("ida") || "") : "",
+        vuelta: usa ? (fd.get("vuelta") || "") : "",
+        cancion: (fd.get("cancion") || "").trim()
       };
 
       enviando = true;
@@ -736,13 +744,10 @@ const CONFIG = {
       try {
         if (CONFIG.SCRIPT_URL.indexOf("TU_") === 0) throw new Error("Falta configurar SCRIPT_URL");
 
-        await fetch(CONFIG.SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },   // evita el preflight CORS
-          body: JSON.stringify(datos),
-          redirect: "follow"
-        });
+        const res = await pedirAlScript(datos);
+        if (!res || !res.ok) throw new Error(mensajeDeError(res));
 
+        try { sessionStorage.removeItem(SESION); } catch (e) {}
         form.hidden = true;
         const ok = $("[data-ok]");
         if (ok) { ok.hidden = false; setTimeout(() => irA(ok), 60); }
@@ -756,13 +761,164 @@ const CONFIG = {
           bar.style.width = "0";
         }
         if (errorBox) {
-          errorBox.innerHTML = "No pudimos enviar la confirmación. Revisá tu conexión y probá de nuevo" +
-            (CONFIG.WHATSAPP ? ', o escribinos por <a href="https://wa.me/' + CONFIG.WHATSAPP + '" target="_blank" rel="noopener" style="text-decoration:underline">WhatsApp</a>.' : ".");
+          errorBox.innerHTML = (err2 && err2.message ? err2.message : "No pudimos enviar la confirmación. Revisá tu conexión y probá de nuevo.") +
+            (CONFIG.WHATSAPP ? ' Escribinos por <a href="https://wa.me/' + CONFIG.WHATSAPP + '" target="_blank" rel="noopener" style="text-decoration:underline">WhatsApp</a>.' : "");
           errorBox.hidden = false;
         }
       }
     });
   }
+  /* -------- Puerta de acceso por código -------- */
+  const SESION = "clarixv.invitado";
+  let invitado = null;
+
+  const gate      = $("[data-gate]");
+  const gateForm  = $("[data-gate-form]");
+  const gateInput = $("[data-gate-input]");
+  const gateError = $("[data-gate-error]");
+  const gateNota  = $("[data-gate-estado]");
+
+  function pideAdulto()    { return !!(invitado && invitado.menor); }
+  function ofreceTransfer() { return !!(invitado && invitado.punto); }
+
+  async function pedirAlScript(payload) {
+    try {
+      const res = await fetch(CONFIG.SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },   // evita el preflight CORS
+        body: JSON.stringify(payload),
+        redirect: "follow"
+      });
+      return await res.json();
+    } catch (e) {
+      return { ok: false, error: "red" };
+    }
+  }
+
+  function mensajeDeError(res) {
+    const e = res && res.error;
+    if (e === "usado")      return "Este código ya confirmó" + (res.fecha ? " el " + res.fecha : "") + ". Si necesitás cambiar algo, escribinos.";
+    if (e === "invalido")   return "Ese código no es válido. Revisá el link que te mandamos.";
+    if (e === "incompleto") return "Falta completar un dato del formulario.";
+    if (e === "red")        return "No pudimos conectarnos. Revisá tu conexión y probá de nuevo.";
+    return "Hubo un problema de nuestro lado. Probá de nuevo en un rato.";
+  }
+
+  function codigoDeUrl() {
+    const m = (location.search || "").match(/[?&]code[=_]([A-Za-z]{6})(?![A-Za-z])/);
+    return m ? m[1].toUpperCase() : "";
+  }
+
+  function gateMensaje(texto) {
+    if (!gateError) return;
+    gateError.textContent = texto || "";
+    gateError.hidden = !texto;
+  }
+
+  function gateEsperando(esperando) {
+    if (gateForm) gateForm.style.display = esperando ? "none" : "flex";
+    if (gateNota) gateNota.textContent = esperando
+      ? "Un segundo, estamos buscando tu invitación…"
+      : "Escribí el código que te llegó con la invitación";
+  }
+
+  function mostrarNombre(nombre, apellido) {
+    const fijo = $("[data-nombre-fijo]");
+    const texto = $("[data-nombre-texto]");
+    const completo = !!(nombre && apellido);
+    if (fijo) fijo.hidden = !completo;
+    if (texto) texto.textContent = (nombre + " " + apellido).trim();
+    ['[data-field="nombre"]', '[data-field="apellido"]'].forEach(sel => {
+      const campo = $(sel);
+      if (campo) campo.hidden = completo;
+    });
+  }
+
+  function escribirNombreAMano() {
+    if (form.nombre) form.nombre.value = "";
+    if (form.apellido) form.apellido.value = "";
+    mostrarNombre("", "");
+    if (form.nombre) form.nombre.focus();
+  }
+
+  function precargar(d) {
+    if (!form) return;
+    form.nombre.value = d.nombre || "";
+    form.apellido.value = d.apellido || "";
+    mostrarNombre(d.nombre || "", d.apellido || "");
+
+    const campoAdulto = $('[data-field="adultoTel"]');
+    if (campoAdulto) campoAdulto.hidden = !d.menor;
+    if (!d.menor && form.adultoTel) form.adultoTel.value = "";
+
+    // Sin punto de salida cargado no hay transfer para esta persona.
+    const bloqueTransfer = $('[data-field="transfer"]');
+    if (bloqueTransfer) bloqueTransfer.hidden = !d.punto;
+    const texto = $("[data-punto-texto]");
+    if (texto) texto.textContent = d.punto || "";
+    if (!d.punto) {
+      $$('input[name="transfer"], input[name="ida"], input[name="vuelta"]').forEach(i => { i.checked = false; });
+      const detalle = $("[data-transfer-detalle]");
+      if (detalle) detalle.style.display = "none";
+    }
+  }
+
+  function abrir(datos) {
+    invitado = datos;
+    try { sessionStorage.setItem(SESION, JSON.stringify(datos)); } catch (e) {}
+    precargar(datos);
+    try { history.replaceState(null, "", location.pathname); } catch (e) {}
+    document.documentElement.removeAttribute("data-gated");
+    if (gate) {
+      gate.style.opacity = "0";
+      setTimeout(() => gate.remove(), reduce ? 0 : 340);
+    }
+  }
+
+  async function validarCodigo(code) {
+    gateMensaje("");
+    gateEsperando(true);
+    const res = await pedirAlScript({ action: "lookup", code: code });
+    if (res && res.ok) { abrir(res); return; }
+    gateEsperando(false);
+    gateMensaje(mensajeDeError(res));
+    if (gateInput) { gateInput.value = code; gateInput.focus(); gateInput.select(); }
+  }
+
+  if (gateInput) gateInput.addEventListener("input", () => {
+    gateInput.value = gateInput.value.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 6);
+    gateMensaje("");
+  });
+
+  if (gateForm) gateForm.addEventListener("submit", e => {
+    e.preventDefault();
+    const code = (gateInput ? gateInput.value : "").toUpperCase().replace(/[^A-Z]/g, "");
+    if (code.length !== 6) { gateMensaje("El código tiene seis letras."); return; }
+    validarCodigo(code);
+  });
+
+  const btnNoSoyYo = $("[data-no-soy-yo]");
+  if (btnNoSoyYo) btnNoSoyYo.addEventListener("click", escribirNombreAMano);
+
+  if (form && form.menu) {
+    const verOtra = () => {
+      const campo = $('[data-field="restriccionOtra"]');
+      if (campo) campo.style.display = form.menu.value === "Otra" ? "flex" : "none";
+    };
+    form.menu.addEventListener("change", verOtra);
+    verOtra();
+  }
+
+  (function abrirPuerta() {
+    if (!gate) return;
+    let guardado = null;
+    try { guardado = JSON.parse(sessionStorage.getItem(SESION) || "null"); } catch (e) {}
+    const code = codigoDeUrl();
+    if (guardado && guardado.ok && (!code || code === guardado.code)) { abrir(guardado); return; }
+    if (code) { validarCodigo(code); return; }
+    gateEsperando(false);
+    if (gateInput) gateInput.focus();
+  })();
 })();
 </script>
 </body>
