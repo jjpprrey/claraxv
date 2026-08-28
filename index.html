@@ -739,19 +739,23 @@ const CONFIG = {
       try {
         if (CONFIG.SCRIPT_URL.indexOf("TU_") === 0) throw new Error("Falta configurar SCRIPT_URL");
 
-        const res = await pedirAlScript(datos);
+        const previo = (invitado && invitado.estado) || "nuevo";
+        let res = await pedirAlScript(datos);
+        if (res && res.error === "red") {
+          if (label) label.textContent = "Verificando";
+          res = await releerFila(datos, previo, res);
+        }
         if (!res || !res.ok) throw new Error(mensajeDeError(res));
 
-        const modificacion = !!(invitado && invitado.estado === "confirmado");
         if (invitado) {
           invitado.estado = "confirmado";
-          invitado.respuestas = (res && res.respuestas) || invitado.respuestas;
+          invitado.respuestas = res.respuestas || invitado.respuestas;
           guardarSesion();
         }
         pintarCTA(false);
         ctaMensaje("");
         const okTitulo = $("[data-ok-titulo]");
-        if (okTitulo) okTitulo.textContent = modificacion ? "¡Listo, lo actualizamos!" : "¡Gracias por confirmar!";
+        if (okTitulo) okTitulo.textContent = previo === "confirmado" ? "¡Listo, lo actualizamos!" : "¡Gracias por confirmar!";
         form.hidden = true;
         const ok = $("[data-ok]");
         if (ok) { ok.hidden = false; setTimeout(() => irA(ok), 60); }
@@ -834,7 +838,11 @@ const CONFIG = {
     if (ctaSi) { ctaSi.disabled = true; ctaSi.textContent = "Cancelando"; }
     if (ctaNo) ctaNo.disabled = true;
 
-    const res = await pedirAlScript({ action: "cancelar", code: invitado.code });
+    let res = await pedirAlScript({ action: "cancelar", code: invitado.code });
+    if (res && res.error === "red") {
+      const fila = await pedirAlScript({ action: "lookup", code: invitado.code }, 8000);
+      if (fila && fila.ok && fila.estado === "cancelado") res = { ok: true, respuestas: fila.respuestas || {} };
+    }
 
     cancelando = false;
     if (ctaSi) { ctaSi.disabled = false; ctaSi.textContent = "Sí, cancelar"; }
@@ -861,17 +869,48 @@ const CONFIG = {
   if (ctaNo) ctaNo.addEventListener("click", () => pintarCTA(false));
   if (ctaSi) ctaSi.addEventListener("click", cancelarAsistencia);
 
-  async function pedirAlScript(payload) {
+  // El script escribe la fila y recién después contesta. Cuando esa respuesta no
+  // vuelve, el envío parece fallido aunque el dato esté guardado: releemos la fila
+  // antes de dar el error.
+  async function releerFila(datos, previo, red) {
+    const fila = await pedirAlScript({ action: "lookup", code: datos.code }, 8000);
+    if (!fila || !fila.ok || fila.estado !== "confirmado") return red;
+    // Si ya estaba confirmado, el estado no distingue esta respuesta de la anterior.
+    if (previo === "confirmado" && !coincide(fila.respuestas, datos)) return red;
+    return { ok: true, respuestas: fila.respuestas || {} };
+  }
+
+  function coincide(guardado, datos) {
+    const g = guardado || {};
+    const igual = (a, b) => String(a == null ? "" : a).trim() === String(b == null ? "" : b).trim();
+    const dig = v => String(v == null ? "" : v).replace(/\D/g, "");
+    return igual(g.nombre, datos.nombre) &&
+           igual(g.apellido, datos.apellido) &&
+           dig(g.telefono) === dig(datos.telefono) &&
+           igual(g.restriccion, datos.restriccion) &&
+           igual(g.cancion, datos.cancion);
+  }
+
+  // Sin corte, un fetch colgado deja la pantalla esperando hasta que el navegador
+  // se rinde. Abortar no deshace nada: el script ya escribió antes de contestar.
+  const ESPERA = 12000;
+
+  async function pedirAlScript(payload, ms) {
+    const corte = new AbortController();
+    const reloj = setTimeout(() => corte.abort(), ms || ESPERA);
     try {
       const res = await fetch(CONFIG.SCRIPT_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },   // evita el preflight CORS
         body: JSON.stringify(payload),
-        redirect: "follow"
+        redirect: "follow",
+        signal: corte.signal
       });
       return await res.json();
     } catch (e) {
       return { ok: false, error: "red" };
+    } finally {
+      clearTimeout(reloj);
     }
   }
 
@@ -1010,7 +1049,6 @@ const CONFIG = {
   async function validarCodigo(code) {
     gateMensaje("");
     gateEsperando(true);
-    // La primera visita puede pagar el arranque en frío del script.
     const paciencia = setTimeout(() => {
       if (gateNota) gateNota.textContent = "Está tardando un poco más de lo normal. Ya casi…";
     }, 6000);
