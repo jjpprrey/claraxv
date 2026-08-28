@@ -27,6 +27,8 @@
   .btn-wine:hover { background:#92304C; transform:translateY(-2px); box-shadow:0 26px 46px -20px rgba(176,58,91,.78); color:#fff; }
   .btn-linea { background:transparent; color:#B03A5B; }
   .btn-linea:hover { background:#B03A5B; color:#fff; transform:translateY(-2px); }
+  .btn-wine:disabled, .btn-linea:disabled { opacity:.5; cursor:default !important; transform:none; box-shadow:none; }
+  .btn-linea:disabled:hover { background:transparent; color:#B03A5B; }
   .opt:hover { border-color:rgba(176,58,91,.8); background:#fff; }
   .btn-copy:hover { background:#fff; color:#B03A5B; border-color:#fff; }
   .btn-mp:hover { background:transparent; color:#fff; }
@@ -420,23 +422,6 @@ const CONFIG = {
   WHATSAPP: "",   // formato 549XXXXXXXXXX. Si el envío falla, ofrece confirmar por WhatsApp.
 
 
-  // ------------------------------------------------------------------
-  // PALABRAS BLOQUEADAS. Si un campo de texto (nombre, adulto, canción)
-  // contiene alguna de estas, no deja enviar. No distingue mayúsculas,
-  // tildes ni letras repetidas ("putaaa" cuenta igual que "puta").
-  // Podés agregar o quitar las que quieras.
-  // ------------------------------------------------------------------
-  INSULTOS: [
-    "pelotudo", "pelotuda", "boludo", "boluda", "boludazo", "puta", "putas",
-    "puto", "putos", "putazo", "forro", "forra", "conchudo", "conchuda",
-    "concha", "conchatumadre", "mierda", "cagon", "cagona", "sorete", "choto",
-    "chota", "garca", "garcas", "trolo", "trola", "gil", "giles", "tarado",
-    "tarada", "imbecil", "idiota", "estupido", "estupida", "pija", "pijas",
-    "verga", "vergas", "carajo", "culiado", "culiao", "reculiado", "pajero",
-    "pajera", "cornudo", "cabron", "cabrona", "chupapija", "zorra", "zorras",
-    "malparido", "mogolico", "subnormal", "orto", "hdp", "hijodeputa"
-  ],
-
   // Interruptores de decoración.
   mostrarBrillos: true,
   mostrarCuenta: true,
@@ -585,22 +570,17 @@ const CONFIG = {
   }
   $$('input[name="transfer"]').forEach(r => r.addEventListener("change", actualizarTransfer));
 
-  /* -------- Teléfono: argentino de diez dígitos, o del exterior con + -------- */
-  const TEL_DIGITOS = 10;
-  const TEL_EXT_MIN = 8;
-  const TEL_EXT_MAX = 15;
+  /* -------- Teléfono: dígitos, hasta quince -------- */
+  const TEL_MAX = 15;
   const esInternacional = v => String(v || "").trim().indexOf("+") === 0;
 
   function soloTel(e) {
     const valor = e.target.value;
-    const tope = esInternacional(valor) ? TEL_EXT_MAX : TEL_DIGITOS;
     let vistos = 0;
     const limpio = (esInternacional(valor) ? "+" : "") + valor
       .replace(/[^\d\s()+\-]/g, "")
-      .replace(/\d/g, d => (++vistos > tope ? "" : d))
+      .replace(/\d/g, d => (++vistos > TEL_MAX ? "" : d))
       .replace(/\+/g, "");
-    // Recortar no puede volver válido lo que no lo era: se avisa.
-    e.target.dataset.sobran = vistos > tope ? "1" : "";
     if (valor !== limpio) e.target.value = limpio;
   }
   $$("[data-solo-tel]").forEach(inp => inp.addEventListener("input", soloTel));
@@ -629,38 +609,6 @@ const CONFIG = {
     }, 2200);
   });
 
-  /* -------- Lista de invitados y filtro de insultos -------- */
-  function normalizar(s) {
-    return (s == null ? "" : String(s)).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
-  }
-  function tieneInsulto(texto) {
-    const lista = CONFIG.INSULTOS || [];
-    if (!lista.length) return false;
-    // colapsa 3+ letras repetidas: "putaaaa" -> "puta"
-    const t = normalizar(texto).replace(/(.)\1{2,}/g, "$1");
-    const palabras = t.split(/[^a-z]+/).filter(Boolean);
-    return palabras.some(p => lista.some(mala => {
-      const m = normalizar(mala);
-      if (p === m) return true;                       // palabra exacta
-      if (m.length >= 5 && p.indexOf(m) === 0) return true; // plural/variante de insultos largos
-      return false;
-    }));
-  }
-
-  // Verifica que una parte (nombre o apellido) parezca real: solo letras, con vocal.
-  function parecePalabra(s) {
-    const t = (s || "").trim();
-    // solo letras (con acentos/ñ), apóstrofos y guiones; puede tener más de una palabra (apellidos compuestos)
-    if (!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?:[ '.\-]+[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/.test(t)) return false;
-    for (const p of t.split(/[ '.\-]+/).filter(Boolean)) {
-      const n = p.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      if (!/[aeiou]/.test(n)) return false;                     // sin vocales
-      if (/(.)\1\1\1/.test(n)) return false;                    // 4+ repetidas
-      if (/[bcdfghjklmnpqrstvwxyz]{5,}/.test(n)) return false;  // 5+ consonantes seguidas
-    }
-    return true;
-  }
-
   /* -------- Formulario: validación + envío -------- */
   const form = $("[data-rsvp-form]");
 
@@ -677,18 +625,13 @@ const CONFIG = {
     if (input && input.style) input.style.borderBottomColor = mensaje ? "#8E1428" : "rgba(36,22,49,.28)";
   }
 
-  const OFENSIVO = "Por favor, evitá palabras ofensivas.";
-  const TEL_MSG = "El celular tiene que tener 10 dígitos (sin 0 ni 15). Si es del exterior, escribilo con + y el código de país.";
-  const TEL_PREFIJO_MSG = "Escribilo sin 0 y sin 15: empieza por la característica (ej: 11 2345 6789). Si es del exterior, poné + adelante.";
-  const TEL_EXT_MSG = "Un número del exterior lleva entre 8 y 15 dígitos con el código de país (ej: +55 11 91234 5678).";
-  const TEL_SOBRAN_MSG = "Te sobran dígitos. Son 10 para Argentina, o hasta 15 empezando con + si es del exterior.";
+  const TEL_MSG = "Escribí un número de celular.";
+  const TEL_LARGO_MSG = "Son quince dígitos como máximo.";
 
-  function errorTel(valor, campo) {
-    if (campo && campo.dataset.sobran) return TEL_SOBRAN_MSG;
+  function errorTel(valor) {
     const d = String(valor || "").replace(/\D/g, "");
-    if (esInternacional(valor)) return (d.length >= TEL_EXT_MIN && d.length <= TEL_EXT_MAX) ? "" : TEL_EXT_MSG;
-    if (d.length !== TEL_DIGITOS) return TEL_MSG;
-    if (!/^[123]/.test(d)) return TEL_PREFIJO_MSG;
+    if (!d) return TEL_MSG;
+    if (d.length > TEL_MAX) return TEL_LARGO_MSG;
     return "";
   }
 
@@ -704,19 +647,13 @@ const CONFIG = {
     const vueltaSel   = form.querySelector('input[name="vuelta"]:checked');
 
     const V = {};
-    // Nombre
     if (nombre.length < 2) V.nombre = "Necesitamos tu nombre.";
-    else if (tieneInsulto(nombre)) V.nombre = OFENSIVO;
-    else if (!parecePalabra(nombre)) V.nombre = "Ingresá un nombre real, solo con letras.";
-    // Apellido
     if (apellido.length < 2) V.apellido = "Necesitamos tu apellido.";
-    else if (tieneInsulto(apellido)) V.apellido = OFENSIVO;
-    else if (!parecePalabra(apellido)) V.apellido = "Ingresá un apellido real, solo con letras.";
-    // Teléfonos: argentino de diez dígitos, o del exterior con código de país
-    const malTel = errorTel(tel, form.telefono);
+    // Teléfonos
+    const malTel = errorTel(tel);
     if (malTel) V.telefono = malTel;
     if (pideAdulto()) {
-      const malAdulto = errorTel(adultoTel, form.adultoTel);
+      const malAdulto = errorTel(adultoTel);
       if (malAdulto) V.adultoTel = malAdulto;
     }
     // Transfer: solo si a esta persona se le ofrece
@@ -727,10 +664,7 @@ const CONFIG = {
     if (form.menu.value === "Otra") {
       const otra = form.restriccionOtra.value.trim();
       if (otra.length < 3) V.restriccionOtra = "Contanos cuál es la restricción.";
-      else if (tieneInsulto(otra)) V.restriccionOtra = OFENSIVO;
     }
-    // Canción (opcional; solo se revisa que no tenga insultos)
-    if (cancion && tieneInsulto(cancion)) V.cancion = OFENSIVO;
 
     const orden = ["nombre", "apellido", "telefono", "adultoTel", "restriccionOtra", "transfer", "ida", "vuelta", "cancion"];
     err = {};
@@ -740,7 +674,18 @@ const CONFIG = {
     });
 
     const primero = orden.find(n => V[n]);
-    if (primero) irA(document.querySelector('[data-field="' + primero + '"]'));
+    if (primero) {
+      const campo = document.querySelector('[data-field="' + primero + '"]');
+      const caja = $("[data-form-error]");
+      if (campo && campo.offsetParent) {
+        if (caja) caja.hidden = true;
+        irA(campo);
+      } else if (caja) {
+        caja.textContent = V[primero];
+        caja.hidden = false;
+        irA(caja);
+      }
+    }
     return !primero;
   }
 
