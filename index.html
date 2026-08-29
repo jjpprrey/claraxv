@@ -745,6 +745,7 @@ const CONFIG = {
           if (label) label.textContent = "Verificando";
           res = await releerFila(datos, previo, res);
         }
+        if (res && res.error === "invalido") return reiniciarSesion();
         if (!res || !res.ok) throw new Error(mensajeDeError(res));
 
         if (invitado) {
@@ -810,6 +811,16 @@ const CONFIG = {
     try { sessionStorage.setItem(SESION, JSON.stringify(invitado)); } catch (e) {}
   }
 
+  // Una sesión guardada por una versión anterior puede no tener código: el envío
+  // sale sin él, el script lo rechaza siempre y no hay forma de volver a la
+  // pantalla del código. Se descarta y se empieza de nuevo.
+  function reiniciarSesion() {
+    try { sessionStorage.removeItem(SESION); } catch (e) {}
+    location.reload();
+  }
+
+  const sesionUsable = g => !!(g && g.ok && /^[A-Z]{6}$/.test(String(g.code || "")));
+
   function ctaMensaje(texto) {
     if (!ctaError) return;
     ctaError.textContent = texto || "";
@@ -849,6 +860,7 @@ const CONFIG = {
     if (ctaNo) ctaNo.disabled = false;
 
     if (!res || !res.ok) {
+      if (res && res.error === "invalido") return reiniciarSesion();
       pintarCTA(false);
       ctaMensaje(mensajeDeError(res));
       return;
@@ -1089,7 +1101,8 @@ const CONFIG = {
     let guardado = null;
     try { guardado = JSON.parse(sessionStorage.getItem(SESION) || "null"); } catch (e) {}
     const code = codigoDeUrl();
-    if (guardado && guardado.ok && (!code || code === guardado.code)) { abrir(guardado); return; }
+    if (guardado && !sesionUsable(guardado)) { try { sessionStorage.removeItem(SESION); } catch (e) {} guardado = null; }
+    if (guardado && (!code || code === guardado.code)) { abrir(guardado); return; }
     if (code) { validarCodigo(code); return; }
     gateEsperando(false);
     if (gateInput) gateInput.focus();
