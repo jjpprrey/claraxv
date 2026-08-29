@@ -741,12 +741,12 @@ const CONFIG = {
 
         const previo = (invitado && invitado.estado) || "nuevo";
         let res = await pedirAlScript(datos);
-        if (res && res.error === "red") {
+        if (res && res.error === "invalido") return reiniciarSesion();
+        if (!quedo(res, "confirmado")) {
           if (label) label.textContent = "Verificando";
           res = await releerFila(datos, previo, res);
         }
-        if (res && res.error === "invalido") return reiniciarSesion();
-        if (!res || !res.ok) throw new Error(mensajeDeError(res));
+        if (!quedo(res, "confirmado")) throw new Error(mensajeDeError(res));
 
         if (invitado) {
           invitado.estado = "confirmado";
@@ -821,6 +821,10 @@ const CONFIG = {
 
   const sesionUsable = g => !!(g && g.ok && /^[A-Z]{6}$/.test(String(g.code || "")));
 
+  // `ok` no alcanza: la clave de un solo uso del segundo salto, ya consumida,
+  // rebota a doGet y contesta {ok:true} sin haber confirmado nada.
+  const quedo = (r, estado) => !!(r && r.ok && r.estado === estado);
+
   function ctaMensaje(texto) {
     if (!ctaError) return;
     ctaError.textContent = texto || "";
@@ -850,16 +854,16 @@ const CONFIG = {
     if (ctaNo) ctaNo.disabled = true;
 
     let res = await pedirAlScript({ action: "cancelar", code: invitado.code });
-    if (res && res.error === "red") {
+    if (!quedo(res, "cancelado")) {
       const fila = await pedirAlScript({ action: "lookup", code: invitado.code }, 8000);
-      if (fila && fila.ok && fila.estado === "cancelado") res = { ok: true, respuestas: fila.respuestas || {} };
+      if (quedo(fila, "cancelado")) res = { ok: true, estado: "cancelado", respuestas: fila.respuestas || {} };
     }
 
     cancelando = false;
     if (ctaSi) { ctaSi.disabled = false; ctaSi.textContent = "Sí, cancelar"; }
     if (ctaNo) ctaNo.disabled = false;
 
-    if (!res || !res.ok) {
+    if (!quedo(res, "cancelado")) {
       if (res && res.error === "invalido") return reiniciarSesion();
       pintarCTA(false);
       ctaMensaje(mensajeDeError(res));
@@ -889,7 +893,7 @@ const CONFIG = {
     if (!fila || !fila.ok || fila.estado !== "confirmado") return red;
     // Si ya estaba confirmado, el estado no distingue esta respuesta de la anterior.
     if (previo === "confirmado" && !coincide(fila.respuestas, datos)) return red;
-    return { ok: true, respuestas: fila.respuestas || {} };
+    return { ok: true, estado: "confirmado", respuestas: fila.respuestas || {} };
   }
 
   function coincide(guardado, datos) {
